@@ -81,7 +81,7 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
       viewAllPosts: 'すべての記事を見る'
     },
     footer: {
-      madeIn: 'Made with Next.js & Tailwind CSS',
+      madeIn: 'Powered by Next.js & Tailwind CSS',
       rights: 'All rights reserved.',
       source: 'ソースコードを見る'
     },
@@ -127,7 +127,7 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
       viewAllPosts: 'View all posts'
     },
     footer: {
-      madeIn: 'Made with Next.js & Tailwind CSS',
+      madeIn: 'Powered by Next.js & Tailwind CSS',
       rights: 'All rights reserved.',
       source: 'View source on GitHub'
     },
