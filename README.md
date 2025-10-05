@@ -43,10 +43,6 @@ npm run dev
   2. `npm run start`
   3. Chrome DevTools > Lighthouse (Performance / Accessibility / Best Practices / SEO) を実行し 95+ を目指す。
 
-## デプロイ
-- Vercel での静的ホスティング、もしくは任意の静的サイトホスティングへ `out/` ディレクトリをアップロードします。
-- GA4 等のキーは環境ごとに `.env` を用意し、Build 前に注入してください。
-
 ## その他
 - 作業ルールや Definition of Done は `AGENTS.md` を確認してください。
 - テーマ/言語の切り替え状態はローカルストレージに保存されます。
