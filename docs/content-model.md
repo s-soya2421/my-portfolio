@@ -38,7 +38,7 @@
 content/
 ├── projects/
 │   ├── fitnesssns.mdx
-│   └── releasecraft.mdx
+│   └── location-share.mdx
 ├── blog/
 │   └── <post-slug>.mdx
 └── pages/
