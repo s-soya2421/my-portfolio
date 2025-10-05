@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers';
 import { baseMetadata, websiteJsonLd, personJsonLd } from '@/lib/seo';
 import { siteConfig } from '@/lib/site';
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/next';
 
 const sans = Noto_Sans_JP({
   subsets: ['latin'],
@@ -27,8 +28,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={siteConfig.defaultLocale} suppressHydrationWarning>
-      <body className={`${sans.variable} ${mono.variable} font-sans min-h-screen bg-background text-foreground`}> 
+      <body className={`${sans.variable} ${mono.variable} font-sans min-h-screen bg-background text-foreground`}>
         <Providers>{children}</Providers>
+        <Analytics />
         <Script id="structured-data-website" type="application/ld+json">
           {JSON.stringify(websiteJsonLd)}
         </Script>
