@@ -48,7 +48,7 @@ export const ProjectsGrid = ({
         ))}
       </div>
       {!filtered.length ? (
-        <p className="text-sm text-muted-foreground">該当するプロジェクトはありません。</p>
+        <p className="text-sm text-muted-foreground">{dictionary.projects.empty}</p>
       ) : null}
     </div>
   );
