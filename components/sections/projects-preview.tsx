@@ -20,8 +20,8 @@ export const ProjectsPreview = ({
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
         <SectionHeader
           eyebrow={dictionary.sections.featuredProjects}
-          title="個人開発"
-          description="自主開発で検証を進めているプロダクトをピックアップ。"
+          title={dictionary.sections.featuredProjectsTitle}
+          description={dictionary.sections.featuredProjectsDescription}
         />
         <Button asChild variant="ghost">
           <Link href="/projects">{dictionary.actions.viewAllProjects}</Link>
@@ -29,7 +29,6 @@ export const ProjectsPreview = ({
       </div>
       {projects.length ? (
         <motion.div
-          // @ts-ignore - framer-motion v11 type issue
           className="mt-8 grid gap-6 md:grid-cols-2"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -40,7 +39,7 @@ export const ProjectsPreview = ({
           ))}
         </motion.div>
       ) : (
-        <p className="mt-8 text-sm text-muted-foreground">プロジェクト準備中です。</p>
+        <p className="mt-8 text-sm text-muted-foreground">{dictionary.projects.preparingProjects}</p>
       )}
     </section>
   );

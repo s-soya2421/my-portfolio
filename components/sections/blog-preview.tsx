@@ -16,8 +16,8 @@ export const BlogPreview = ({ posts }: { posts: (BlogFrontmatter & { slug: strin
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
         <SectionHeader
           eyebrow={dictionary.sections.recentPosts}
-          title="ブログ & ノート"
-          description="設計検討や学びを軽量にまとめています。"
+          title={dictionary.sections.recentPostsTitle}
+          description={dictionary.sections.recentPostsDescription}
         />
         <Button asChild variant="ghost">
           <Link href="/blog">{dictionary.actions.viewAllPosts}</Link>
@@ -25,7 +25,6 @@ export const BlogPreview = ({ posts }: { posts: (BlogFrontmatter & { slug: strin
       </div>
       {posts.length ? (
         <motion.div
-          // @ts-ignore - framer-motion v11 type issue
           className="mt-8 grid gap-6 md:grid-cols-2"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

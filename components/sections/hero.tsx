@@ -12,7 +12,6 @@ export const Hero = () => {
   return (
     <section className="container pb-16 pt-12">
       <motion.div
-        // @ts-ignore - framer-motion v11 type issue
         className="max-w-3xl"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -27,9 +26,6 @@ export const Hero = () => {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link href={`mailto:${siteConfig.email}`}>{dictionary.hero.ctaPrimary}</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
             <Link href="/projects">{dictionary.hero.ctaSecondary}</Link>
           </Button>
         </div>

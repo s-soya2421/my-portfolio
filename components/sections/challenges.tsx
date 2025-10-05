@@ -18,8 +18,8 @@ export const ChallengesSection = ({ items }: { items: ChallengeItem[] }) => {
     <section className="container py-12">
       <SectionHeader
         eyebrow={dictionary.sections.challenges}
-        title="取り組んでいるチャレンジ"
-        description="継続的な改善を目指して、プロダクトづくりと働き方の両面で試行錯誤しています。"
+        title={dictionary.sections.challengesTitle}
+        description={dictionary.sections.challengesDescription}
       />
       <div className="mt-8 grid gap-6 md:grid-cols-3">
         {items.map((item, index) => (

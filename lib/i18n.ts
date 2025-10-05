@@ -17,8 +17,14 @@ type SectionCopy = {
   sections: {
     now: string;
     challenges: string;
+    challengesTitle: string;
+    challengesDescription: string;
     featuredProjects: string;
+    featuredProjectsTitle: string;
+    featuredProjectsDescription: string;
     recentPosts: string;
+    recentPostsTitle: string;
+    recentPostsDescription: string;
   };
   actions: {
     viewAllProjects: string;
@@ -32,6 +38,8 @@ type SectionCopy = {
   projects: {
     filterAll: string;
     technologies: string;
+    empty: string;
+    preparingProjects: string;
   };
   blog: {
     empty: string;
@@ -59,8 +67,14 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     sections: {
       now: '今取り組んでいること',
       challenges: 'チャレンジ中',
+      challengesTitle: '取り組んでいるチャレンジ',
+      challengesDescription: '継続的な改善を目指して、プロダクトづくりと働き方の両面で試行錯誤しています。',
       featuredProjects: '注目のプロジェクト',
-      recentPosts: '最近の投稿'
+      featuredProjectsTitle: '個人開発',
+      featuredProjectsDescription: '自主開発で検証を進めているプロダクトをピックアップ。',
+      recentPosts: '最近の投稿',
+      recentPostsTitle: 'ブログ & ノート',
+      recentPostsDescription: '設計検討や学びを軽量にまとめています。'
     },
     actions: {
       viewAllProjects: 'すべてのプロジェクトを見る',
@@ -73,7 +87,9 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     },
     projects: {
       filterAll: 'すべて',
-      technologies: '使用技術'
+      technologies: '使用技術',
+      empty: '該当するプロジェクトはありません。',
+      preparingProjects: 'プロジェクト準備中です。'
     },
     blog: {
       empty: 'まだ記事はありません。',
@@ -97,8 +113,14 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     sections: {
       now: 'Current focus',
       challenges: 'Current challenges',
+      challengesTitle: 'Current Challenges',
+      challengesDescription: 'Continuously improving product development and work practices through experimentation.',
       featuredProjects: 'Featured projects',
-      recentPosts: 'Latest posts'
+      featuredProjectsTitle: 'Personal Projects',
+      featuredProjectsDescription: 'Selected products in development and validation.',
+      recentPosts: 'Latest posts',
+      recentPostsTitle: 'Blog & Notes',
+      recentPostsDescription: 'Lightweight summaries of design considerations and learnings.'
     },
     actions: {
       viewAllProjects: 'View all projects',
@@ -111,7 +133,9 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     },
     projects: {
       filterAll: 'All',
-      technologies: 'Tech stack'
+      technologies: 'Tech stack',
+      empty: 'No matching projects found.',
+      preparingProjects: 'Projects coming soon.'
     },
     blog: {
       empty: 'No posts yet.',
