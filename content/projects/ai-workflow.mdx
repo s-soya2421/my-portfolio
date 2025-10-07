@@ -1,0 +1,24 @@
+---
+title: "AIワークフロー要件定義メモ"
+description: "AIエージェントと人間が協調して開発を進めるためのワークフロー基盤。自動化と品質保証を両立する設計を検討しています。"
+date: "2025-10-08"
+tags: ["AI", "Workflow", "Automation", "Claude", "Documentation"]
+cover: "/images/projects/ai-workflow-cover.svg"
+role: "個人開発"
+tech: ["TypeScript", "pnpm", "OpenTelemetry", "CI/CD", "Markdown"]
+links:
+  github: "https://github.com/s-soya2421/ai-work-flow"
+draft: false
+---
+
+## コンセプト
+AIエージェント（Claude等）と人間の開発者が協調し、効率的かつ高品質な開発を実現するワークフロー基盤です。テキストベースの設計管理と自動品質チェックにより、属人化を防ぎながら開発速度を向上させることを目指しています。
+
+## 進行中の検討事項
+- **エージェント指示の標準化**: AGENTS.mdとclaude.mdを用いて、AIの動作ルールを明文化し、出力品質の一貫性を確保する方法。
+- **自動品質チェックの統合**: Lint/Test/Securityチェックを CI/CD パイプラインに組み込み、人的エラーを削減する設計。
+- **オブザーバビリティ**: OpenTelemetryを活用した開発プロセスの可視化と、ボトルネック特定の自動化。
+- **ドキュメント駆動開発**: OVERVIEW.mdを起点に、仕様と実装の乖離を最小化するワークフローの構築。
+
+## メモ
+個人開発として、AIとの協働における最適なプロセスを模索しています。pnpmによる依存管理、Markdownベースのドキュメント設計により、軽量かつ再現性の高い開発環境を維持しつつ、Human-in-the-Loop の考え方を取り入れて品質と自動化のバランスを追求中です。
