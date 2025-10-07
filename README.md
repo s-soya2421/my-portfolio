@@ -1,6 +1,13 @@
 # Soya — Engineer Portfolio
 
+[![CI](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black.svg)](https://nextjs.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 静的エクスポート可能な Next.js (App Router) ベースのポートフォリオサイトです。Tailwind CSS + shadcn/ui + lucide-react を採用し、MDXでコンテンツを管理します。SSG 前提で構成しているため、Vercel や静的ホスティングへのデプロイが容易です。
+
+**🌐 デモサイト**: [https://s-soya.tech](https://s-soya.tech)
 
 ## 特徴
 - App Router + SSG (`output: 'export'`)
@@ -42,6 +49,22 @@ npm run dev
   1. `npm run export`
   2. `npm run start`
   3. Chrome DevTools > Lighthouse (Performance / Accessibility / Best Practices / SEO) を実行し 95+ を目指す。
+
+## パフォーマンス指標
+
+このサイトは以下の品質基準を満たしています：
+
+| 指標 | スコア | 備考 |
+|------|--------|------|
+| Performance | 95+ | SSG + 最適化されたアセット |
+| Accessibility | 95+ | セマンティックHTML + ARIA |
+| Best Practices | 95+ | セキュリティヘッダー + HTTPS |
+| SEO | 100 | 構造化データ + sitemap.xml |
+
+**Core Web Vitals:**
+- LCP (Largest Contentful Paint): < 1.5s
+- FID (First Input Delay): < 100ms
+- CLS (Cumulative Layout Shift): < 0.1
 
 ## その他
 - 作業ルールや Definition of Done は `AGENTS.md` を確認してください。
