@@ -101,6 +101,30 @@ body {
   @apply border-l-4 border-primary/40 pl-4 italic;
 }
 
+.prose code {
+  @apply rounded bg-muted px-1.5 py-0.5 text-sm font-medium text-foreground;
+}
+
+.prose pre {
+  @apply overflow-x-auto rounded-3xl border border-border/60 bg-muted p-4;
+}
+
+.prose pre code {
+  @apply block bg-transparent p-0 text-sm text-foreground;
+}
+
+.dark .prose code {
+  @apply bg-secondary text-secondary-foreground;
+}
+
+.dark .prose pre {
+  @apply bg-secondary;
+}
+
+.dark .prose pre code {
+  @apply text-secondary-foreground;
+}
+
 @media (min-width: 1280px) {
   .container {
     max-width: 1100px;

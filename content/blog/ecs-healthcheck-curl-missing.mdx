@@ -1,0 +1,57 @@
+---
+title: "ECS のヘルスチェックでタスクが落ち続けた原因は「curl 不在」だった話"
+description: "Fargate でヘルスチェックが失敗してタスクが再起動ループに陥った原因と復旧手順、再発防止策をまとめました。"
+date: "2025-10-10"
+updated: "2025-10-10"
+tags: ["AWS", "ECS", "Fargate"]
+draft: false
+---
+
+## TL;DR
+- Fargate のタスク定義で `curl` を使ったヘルスチェックを設定していたが、ベースイメージ `node:22-alpine` には curl が入っていなかった。
+- コマンド実行自体が失敗し続け、ECS が Unhealthy 判定 → タスク再起動ループ。
+- `apk add --no-cache curl` で復旧。もしくは追加パッケージに依存しないヘルスチェックに差し替える。
+
+## 背景
+- インフラ: ECS (Fargate) + Application Load Balancer
+- コンテナベースイメージ: `node:22-alpine`
+- ALB ヘルスチェック: `/_health`（アプリ側は `204` を返す実装済み）
+
+ALB 側では正常に応答していたものの、ECS タスクが数分おきに停止し `stoppedReason` に HealthCheck 関連のメッセージが記録されていた。アプリ側のログには `GET /_health 204` が継続的に出力されており、HTTP レスポンス自体は問題なさそうに見えた。
+
+## 原因分析
+タスク定義の `healthCheck.command` は以下のように設定していた。
+
+```json
+["CMD-SHELL", "curl -f http://127.0.0.1:1337/_health"]
+```
+
+`node:22-alpine` は最小構成の Alpine Linux ベースで、`curl` バイナリが含まれていない。そのためコマンドは HTTP レスポンスの成否に関係なく失敗し、ECS 側がタスクを Unhealthy と判定 → 再起動が繰り返される、という状況だった。
+
+## 最短復旧手順
+とにかく動かすことを優先するなら、ベースイメージに `curl` を追加インストールするのが最短。`Dockerfile` に以下を追記して再ビルド・デプロイするだけで解消した。
+
+```Dockerfile
+FROM node:22-alpine
+
+RUN apk add --no-cache curl ca-certificates
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+
+EXPOSE 1337
+CMD ["npm", "run", "start"]
+```
+
+デプロイ後はタスクが正常に起動し、ECS/ALB 双方のヘルスチェックがグリーンに戻った。
+
+## 再発防止と代替案
+- **追加パッケージなしで完結させる:** Node.js 18+ は `fetch` を標準搭載しているので、`healthCheck.command` を `["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:1337/_health').then(res => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));\""]` のような形にすれば、新たにバイナリを入れずに済む。
+- **ヘルスチェック専用エンドポイントを整備:** HTTP レスポンスコードだけでなく、依存サービスの状態もまとめて返すようにしておくと、障害切り分けが早くなる。
+- **コンテナビルド時のツール確認:** Alpine ベースは軽量だが、`curl` や `bash` が無い前提で CMD やヘルスチェックを設計する。必要なら `apk info -L curl` などで最低限の依存を明文化しておく。
+- **監視メトリクスの補強:** `CloudWatch Logs` のみでは気づきづらいので、`Fargate` タスクの `HealthCheckFailed` アラームを追加して早期検知できるようにしておく。
+
+## まとめ
+ALB のヘルスチェックが緑でも、タスク定義のヘルスチェックが通らないと ECS は容赦なく再起動をかける。軽量イメージを使う際は「入っているもの・いないもの」を棚卸ししておき、依存するツールが無い場合の代替手段も初期設計の段階で用意しておくと安心です。
