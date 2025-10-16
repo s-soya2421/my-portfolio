@@ -1,0 +1,103 @@
+---
+title: "LLMS 向けのインデックス自動生成ツール「llms-txt-maker」を作り始めました"
+description: "llms.txt と llms-full.txt を生成するためのモノレポを公開し、設計や現在の進捗、これから取り組む予定を整理しました。"
+date: "2025-10-17"
+updated: "2025-10-17"
+tags: ["LLM", "Next.js", "TypeScript"]
+draft: false
+---
+
+## TL;DR
+- LLM にサイト構造を渡すための `llms.txt` を毎回手で書くのが手間なので、生成を自動化するモノレポを公開しました。
+- コレクタとレンダラを切り分け、CLI・Next.js アダプタ・サンプルアプリをまとめて管理しています。
+- まだ v0.1 系の実装段階ですが、Zod ベースの設定バリデーションや sitemap クロールなど最低限の足回りは動く状態です。
+
+## きっかけ
+ChatGPT や各種 LLM エージェントに自分のサイトを学習させようとすると、`llms.txt` のようなインデックスファイルを用意する必要があります。ブログやドキュメントの更新頻度が上がると、タイトルやディスクリプションの同期が追いつかず手作業のコストが跳ね上がるのが悩みでした。  
+そこで「サイトマップや Markdown をまとめて読み取り、LLM 向けの要約を自動生成するツールチェーン」を目指して、[https://github.com/s-soya2421/llms-txt-maker](https://github.com/s-soya2421/llms-txt-maker) を同階層のディレクトリに置いて開発を進めています。
+
+## モノレポ構成
+`pnpm` と Changesets で管理するモノレポに以下のパッケージを切り出しました。
+
+- **`@soya/llms-txt`**: コアライブラリ。`defineConfig`, `collectContent`, `render`, `renderFull` などを提供し、手動入力・Markdown/MDX・sitemap クロールの結果をまとめて扱います。
+- **`@soya/llms-txt-next`**: Next.js の API ルートから `llms.txt` を返すための薄いアダプタ。ランタイム切り替えなどは今後の拡張予定。
+- **`@soya/llms-txt-cli`**: Commander ベースの CLI。設定ファイルを読み込み、`public/llms.txt` への書き出しや `--dry-run` をサポート。
+- **`examples/next-app`**: WIP のサンプルアプリ。Next.js で `/llms.txt` を提供する最小構成を検証しています。
+
+## コレクタとレンダラの仕組み
+設定ファイルは Zod でバリデーションしつつ、モジュール間で共有できるよう `defineConfig` をエクスポートしています。実際の設定ファイルは以下のイメージです。
+
+```ts
+import { defineConfig } from '@soya/llms-txt';
+
+export default defineConfig({
+  site: { title: 'Example Docs', url: 'https://example.com' },
+  sources: {
+    manual: {
+      items: [
+        {
+          title: 'Getting Started',
+          url: 'https://example.com/start',
+          summary: 'プロジェクト導入の流れ',
+          tags: ['guide'],
+        },
+      ],
+    },
+    sitemap: {
+      respectRobotsTxt: true,
+      concurrency: 1,
+      delayMs: 1500,
+      maxSummaryChars: 200,
+    },
+  },
+  renderOptions: {
+    redactPII: true,
+    includeTimestamp: true,
+  },
+});
+```
+
+`collectContent` がホームページを先に解決できれば、タイトルとメタディスクリプションを冒頭に挿入し、残りのページは `##` 見出し + 単一リンクで列挙します。`renderFull` を使うと本文要約を含んだ `llms-full.txt` も作成可能です。
+
+## CLI での生成フロー
+CLI パッケージは `pnpm` ワークスペースに依存しているため、まずはビルドしてからコマンドを叩きます。`--sitemap` や `--max-pages` で一時的に設定を上書きできるので、都度クロール対象を変えたいケースにも対応可能です。
+
+```bash
+pnpm install
+pnpm --filter @soya/llms-txt-cli build
+
+node packages/llms-txt-cli/bin/llms-txt build \
+  --config llms.config.ts \
+  --out public/llms.txt
+
+node packages/llms-txt-cli/bin/llms-txt build \
+  --config llms.config.ts \
+  --sitemap https://example.com/sitemaps/site-index.xml \
+  --max-pages 200 \
+  --out public/llms.txt
+
+node packages/llms-txt-cli/bin/llms-txt build --dry-run
+```
+
+## Next.js への組み込み
+Next.js では API ルートにアダプタを挿すだけで済むようにしています。`app/` ディレクトリを使っている場合は以下のように書けます。
+
+```ts
+// app/api/llms/route.ts
+import { makeRoute } from '@soya/llms-txt-next';
+import config from '../../../llms.config';
+
+export const { GET } = makeRoute({ config });
+```
+
+実装中のサンプルアプリでは、生成した `public/llms.txt` を Vercel の静的エクスポートに含める想定で検証しています。
+
+## これから
+現状はコア機能が最小限動く状態なので、以下のような改善を進める予定です。
+
+- CMS 連携用コレクタ（Strapi や MicroCMS）を追加して静的サイト以外でも使えるようにする。
+- HTML から Markdown を抽出するテンプレート機能や PII マスキングの改善。
+- CLI の `crawl`, `fetch`, `build-llms` などロードマップにあるサブコマンドの実装。
+- Next.js アダプタの Edge Runtime 対応と、`/llms.txt` を静的書き出しに含めるオプションの調整。
+
+引き続き v0.1 系として試行錯誤しながら進めているので、フィードバックやユースケースがあればぜひ教えてください。
