@@ -6,6 +6,7 @@ import { baseMetadata, websiteJsonLd, personJsonLd } from '@/lib/seo';
 import { siteConfig } from '@/lib/site';
 import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const sans = Noto_Sans_JP({
   subsets: ['latin'],
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${sans.variable} ${mono.variable} font-sans min-h-screen bg-background text-foreground`}>
         <Providers>{children}</Providers>
         <Analytics />
+        <SpeedInsights />
         <Script id="structured-data-website" type="application/ld+json">
           {JSON.stringify(websiteJsonLd)}
         </Script>
