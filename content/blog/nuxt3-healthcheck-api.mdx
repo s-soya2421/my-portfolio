@@ -1,0 +1,78 @@
+---
+title: "Nuxt 3で超シンプルなヘルスチェックAPIを作る"
+description: "Nuxt 3 の server API で 'ok' を返すだけのヘルスチェックエンドポイントを作り、ECS や Docker コンテナの稼働監視に利用する方法を紹介します。"
+date: "2025-10-22"
+updated: "2025-10-22"
+tags: ["Nuxt3", "HealthCheck", "AWS", "Docker"]
+draft: false
+---
+
+## TL;DR
+- Nuxt 3 の server API は `server/api/*.ts` にファイルを置くだけでエンドポイントが生える。
+- テキストで `ok` を返すヘルスチェックがあれば、ECS / Docker の死活監視でコンテナの稼働を判定しやすい。
+- `curl` で 200 + `ok` を確認してから本番環境のヘルスチェックに組み込む。
+
+## どんなヘルスチェックを用意するか
+コンテナ環境では「アプリケーションが起動して応答できる状態か」を判定するためのエンドポイントが欠かせない。  
+Nuxt の SSR や API を同一プロセスで動かしている場合は、アプリのサーバー層（Nitro）が返す応答を直接確認できるエンドポイントが最小構成として便利だ。
+
+- リクエストは GET のみ
+- ステータスコードは 200
+- レスポンスボディは固定文字列 `ok`
+
+これだけでもロードバランサーやオーケストレーションツールの「生存判定」として十分に機能する。
+
+## Nuxt 3の server API でヘルスチェックを定義する
+`server/api` 配下に `.get.ts` ファイルを置くと GET エンドポイントが作られる。Nuxt 3 / Nitro のレスポンスは文字列でも返却可能なため、最小限のコードは以下で完結する。
+
+```ts
+// server/api/healthcheck.get.ts
+export default defineEventHandler(() => {
+  return 'ok'
+})
+```
+
+`npm run dev` を立ち上げた状態で `http://localhost:3000/api/healthcheck` にアクセスすると、ブラウザでも CLI でも `ok` が表示される。
+
+```bash
+curl -i http://localhost:3000/api/healthcheck
+# HTTP/1.1 200 OK
+# ...
+# ok
+```
+
+`defineEventHandler` は Nitro のユーティリティで、戻り値をそのままレスポンスとして返す。文字列以外に JSON (`return { status: 'ok' }`) を返すことも可能だが、監視用途では JSON パースが不要なプレーンテキストの方が扱いやすい。
+
+## ECSやDockerでのヘルスチェック設定例
+作成したエンドポイントは、コンテナの死活監視にそのまま利用できる。
+
+- **Dockerfile**
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -fs http://localhost:3000/api/healthcheck || exit 1
+```
+
+- **ECS タスク定義（抜粋）**
+
+```json
+"healthCheck": {
+  "command": [
+    "CMD-SHELL",
+    "curl -fs http://localhost:3000/api/healthcheck || exit 1"
+  ],
+  "interval": 30,
+  "timeout": 5,
+  "retries": 3,
+  "startPeriod": 10
+}
+```
+
+アプリケーションがクラッシュしたり、Nuxt のブートで例外が発生すると、このエンドポイントが 5xx を返すかタイムアウトするため、ECS や Docker が自動再起動してくれる。
+
+## 運用時のワンポイント
+- **公開範囲を絞る:** パブリックなエンドポイントとして公開したくない場合は ALB / API Gateway 側で IP 制限をかける。
+- **依存先を追加するか検討:** RDB や外部 API の死活も一緒に監視したい場合は、別の `/api/readyz` を用意し、ここで依存リソースをチェックする。スケールアウト時のレディネス判定と分けると整理しやすい。
+- **ログノイズに注意:** ヘルスチェックは 30 秒間隔などで大量にアクセスされる。ログ基盤でフィルタリングするか、`routeRules` でキャッシュを許可してログ負荷を軽減しておくと安心。
+
+最小限のヘルスチェックでも設定しておくと、コンテナが起動したままハングしているケースを素早く検知できる。Nuxt 3 の server API は追加の設定が不要なので、まずはシンプルな `ok` エンドポイントから導入してみよう。
