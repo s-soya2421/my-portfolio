@@ -130,7 +130,8 @@ export const compileContent = async <T extends BaseFrontmatter>(
       datePublished: fm.date,
       dateModified: fm.updated,
       slug: `/${collection}/${slug}`,
-      tags: fm.tags
+      tags: fm.tags,
+      image: fm.cover
     });
   }
 

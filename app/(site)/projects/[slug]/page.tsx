@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
 import {
   getProjectBySlug,
   loadCollection,
@@ -49,6 +49,21 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
   try {
     const { frontmatter, content, jsonLd } = await getProjectBySlug(slug);
+    const breadcrumb = buildBreadcrumbJsonLd({
+      slug: `/projects/${slug}`,
+      items: [
+        { name: 'ホーム', url: '/' },
+        { name: 'Projects', url: '/projects' },
+        { name: frontmatter.title, url: `/projects/${slug}` }
+      ]
+    });
+    const projectDetailWebPage = webPageJsonLd({
+      slug: `/projects/${slug}`,
+      title: frontmatter.title,
+      description: frontmatter.description,
+      type: 'Article',
+      includeBreadcrumb: true
+    });
 
     return (
       <article className="container space-y-8 pb-16 pt-12">
@@ -134,17 +149,14 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           ) : null}
         </div>
         <div className="prose max-w-none dark:prose-invert">{content}</div>
-        <Script id="breadcrumb-json" type="application/ld+json">
-          {JSON.stringify(
-            breadcrumbJsonLd([
-              { name: 'ホーム', url: '/' },
-              { name: 'Projects', url: '/projects' },
-              { name: frontmatter.title, url: `/projects/${slug}` }
-            ])
-          )}
+        <Script id="project-detail-webpage-json" type="application/ld+json">
+          {JSON.stringify(projectDetailWebPage)}
+        </Script>
+        <Script id="project-detail-breadcrumb-json" type="application/ld+json">
+          {JSON.stringify(breadcrumb)}
         </Script>
         {jsonLd ? (
-          <Script id="project-jsonld" type="application/ld+json">
+          <Script id="project-detail-article-jsonld" type="application/ld+json">
             {JSON.stringify(jsonLd)}
           </Script>
         ) : null}

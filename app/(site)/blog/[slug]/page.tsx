@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
 import { ArrowLeft } from 'lucide-react';
-import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
 import { getBlogPostBySlug, loadCollection, type BlogFrontmatter } from '@/lib/content';
 import { logger } from '@/lib/logger';
 import { formatDate } from '@/lib/utils';
@@ -46,6 +46,21 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
   const { slug } = await params;
   try {
     const { frontmatter, content, jsonLd } = await getBlogPostBySlug(slug);
+    const breadcrumb = buildBreadcrumbJsonLd({
+      slug: `/blog/${slug}`,
+      items: [
+        { name: 'ホーム', url: '/' },
+        { name: 'Blog', url: '/blog' },
+        { name: frontmatter.title, url: `/blog/${slug}` }
+      ]
+    });
+    const blogDetailWebPage = webPageJsonLd({
+      slug: `/blog/${slug}`,
+      title: frontmatter.title,
+      description: frontmatter.description,
+      type: 'Article',
+      includeBreadcrumb: true
+    });
 
     return (
       <article className="container space-y-8 pb-16 pt-12">
@@ -73,17 +88,14 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
           </div>
         </header>
         <div className="prose max-w-none dark:prose-invert">{content}</div>
-        <Script id="blog-breadcrumb-json" type="application/ld+json">
-          {JSON.stringify(
-            breadcrumbJsonLd([
-              { name: 'ホーム', url: '/' },
-              { name: 'Blog', url: '/blog' },
-              { name: frontmatter.title, url: `/blog/${slug}` }
-            ])
-          )}
+        <Script id="blog-detail-webpage-json" type="application/ld+json">
+          {JSON.stringify(blogDetailWebPage)}
+        </Script>
+        <Script id="blog-detail-breadcrumb-json" type="application/ld+json">
+          {JSON.stringify(breadcrumb)}
         </Script>
         {jsonLd ? (
-          <Script id="blog-article-jsonld" type="application/ld+json">
+          <Script id="blog-detail-article-jsonld" type="application/ld+json">
             {JSON.stringify(jsonLd)}
           </Script>
         ) : null}
