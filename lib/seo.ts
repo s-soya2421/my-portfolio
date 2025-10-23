@@ -1,7 +1,18 @@
 import type { Metadata } from 'next';
 import { siteConfig } from './site';
 
-const defaultOgImage = `${siteConfig.url}/images/og-default.png`;
+export type BreadcrumbItem = {
+  name: string;
+  url: string;
+};
+
+const absoluteUrl = (path: string) => new URL(path, siteConfig.url).toString();
+
+const breadcrumbIdFor = (slug: string) => `${absoluteUrl(slug || '/')}#breadcrumb`;
+
+const webPageIdFor = (slug: string) => `${absoluteUrl(slug || '/')}#webpage`;
+
+const defaultOgImage = absoluteUrl('/images/og-default.png');
 
 export const baseMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -95,10 +106,14 @@ export const buildMetadata = ({
 export const websiteJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
+  '@id': `${siteConfig.url}#website`,
   name: siteConfig.name,
   url: siteConfig.url,
   description: siteConfig.description,
   inLanguage: siteConfig.defaultLocale,
+  publisher: {
+    '@id': `${siteConfig.url}#person`
+  },
   potentialAction: {
     '@type': 'SearchAction',
     target: `${siteConfig.url}/search?q={search_term_string}`,
@@ -109,6 +124,7 @@ export const websiteJsonLd = {
 export const personJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
+  '@id': `${siteConfig.url}#person`,
   name: siteConfig.author,
   email: siteConfig.email,
   url: siteConfig.url,
@@ -122,6 +138,7 @@ export const articleJsonLd = (params: {
   dateModified?: string;
   slug: string;
   tags?: string[];
+  image?: string;
 }): Record<string, unknown> => ({
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -130,21 +147,88 @@ export const articleJsonLd = (params: {
   datePublished: params.datePublished,
   dateModified: params.dateModified ?? params.datePublished,
   url: `${siteConfig.url}${params.slug}`,
-  author: [{ '@type': 'Person', name: siteConfig.author }],
+  mainEntityOfPage: {
+    '@id': webPageIdFor(params.slug)
+  },
+  author: [
+    {
+      '@type': 'Person',
+      '@id': `${siteConfig.url}#person`,
+      name: siteConfig.author
+    }
+  ],
   publisher: {
     '@type': 'Person',
+    '@id': `${siteConfig.url}#person`,
     name: siteConfig.author
   },
-  keywords: params.tags ?? []
+  keywords: params.tags ?? [],
+  inLanguage: siteConfig.defaultLocale,
+  ...(params.image
+    ? {
+        image: absoluteUrl(params.image)
+      }
+    : {})
 });
 
-export const breadcrumbJsonLd = (items: { name: string; url: string }[]) => ({
+export const breadcrumbJsonLd = (items: BreadcrumbItem[]) =>
+  buildBreadcrumbJsonLd({ slug: '/', items });
+
+export const webPageJsonLd = (params: {
+  slug?: string;
+  title: string;
+  description: string;
+  type?: string;
+  includeBreadcrumb?: boolean;
+}) => {
+  const slug = params.slug ?? '/';
+  const url = absoluteUrl(slug);
+  return {
+    '@context': 'https://schema.org',
+    '@type': params.type ?? 'WebPage',
+    '@id': webPageIdFor(slug),
+    url,
+    name: params.title,
+    description: params.description,
+    inLanguage: siteConfig.defaultLocale,
+    isPartOf: {
+      '@id': `${siteConfig.url}#website`
+    },
+    ...(params.includeBreadcrumb
+      ? {
+          breadcrumb: {
+            '@id': breadcrumbIdFor(slug)
+          }
+        }
+      : {})
+  };
+};
+
+export const buildBreadcrumbJsonLd = (params: { slug: string; items: BreadcrumbItem[] }) => ({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
-  itemListElement: items.map((item, index) => ({
+  '@id': breadcrumbIdFor(params.slug),
+  itemListElement: params.items.map((item, index) => ({
     '@type': 'ListItem',
     position: index + 1,
     name: item.name,
-    item: item.url
+    item: absoluteUrl(item.url)
+  }))
+});
+
+export const buildItemListJsonLd = (params: {
+  slug: string;
+  items: Array<{ name: string; url: string; description?: string; image?: string }>;
+}) => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  '@id': `${absoluteUrl(params.slug)}#itemlist`,
+  itemListElement: params.items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.name,
+    item: absoluteUrl(item.url),
+    ...(item.description ? { description: item.description } : {}),
+    ...(item.image ? { image: absoluteUrl(item.image) } : {})
   }))
 });
