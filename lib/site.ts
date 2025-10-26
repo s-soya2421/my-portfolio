@@ -1,5 +1,5 @@
 export const siteConfig = {
-  name: 'Soya — Engineer Portfolio',
+  name: 'Soya — Full-Stack-ish Engineer',
   author: 'Soya',
   email: 'your-email@example.com', // TODO: 実際のメールアドレスに変更してください
   description:
