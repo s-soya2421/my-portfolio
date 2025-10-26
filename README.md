@@ -1,4 +1,4 @@
-# Soya — Engineer Portfolio
+# Soya — Full-Stack-ish Engineer
 
 [![CI](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
