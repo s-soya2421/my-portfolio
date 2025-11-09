@@ -1,38 +1,41 @@
 import Script from 'next/script';
 import { SectionHeader } from '@/components/sections/section-header';
 import { PostCard } from '@/components/cards/post-card';
+import { Pagination } from '@/components/shared/pagination';
 import { buildBreadcrumbJsonLd, buildItemListJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
-import { loadCollection, type BlogFrontmatter } from '@/lib/content';
+import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from './constants';
+import { getAllBlogPosts, paginateBlogPosts } from './utils';
 
 export const metadata = buildMetadata({
-  title: 'Blog',
-  description: '学習メモや登壇資料から、設計の試行錯誤まで残しています。',
-  slug: '/blog'
+  title: BLOG_TITLE,
+  description: BLOG_META_DESCRIPTION,
+  slug: BLOG_SLUG
 });
 
 export default async function BlogPage() {
-  const posts = await loadCollection<BlogFrontmatter>('blog');
+  const posts = await getAllBlogPosts();
+  const { pagePosts, totalPages } = paginateBlogPosts(posts, 1);
 
   const breadcrumb = buildBreadcrumbJsonLd({
-    slug: '/blog',
+    slug: BLOG_SLUG,
     items: [
       { name: 'ホーム', url: '/' },
-      { name: 'Blog', url: '/blog' }
+      { name: BLOG_TITLE, url: BLOG_SLUG }
     ]
   });
 
   const blogPageJson = webPageJsonLd({
-    slug: '/blog',
-    title: 'Blog',
-    description: '学習メモや登壇資料から、設計の試行錯誤まで残しています。',
+    slug: BLOG_SLUG,
+    title: BLOG_TITLE,
+    description: BLOG_META_DESCRIPTION,
     type: 'CollectionPage',
     includeBreadcrumb: true
   });
 
-  const postsListJson = posts.length
+  const postsListJson = pagePosts.length
     ? buildItemListJsonLd({
-        slug: '/blog',
-        items: posts.map((post) => ({
+        slug: BLOG_SLUG,
+        items: pagePosts.map((post) => ({
           name: post.title,
           url: `/blog/${post.slug}`,
           description: post.description
@@ -44,16 +47,19 @@ export default async function BlogPage() {
     <>
       <section className="container space-y-10 pb-16 pt-12">
         <SectionHeader
-          eyebrow="Blog"
-          title="学びと検証の記録"
-          description="設計プロセスやツール導入の知見をライトに綴っています。"
+          eyebrow={BLOG_SECTION_COPY.eyebrow}
+          title={BLOG_SECTION_COPY.title}
+          description={BLOG_SECTION_COPY.description}
         />
-        {posts.length ? (
-          <div className="grid gap-6 md:grid-cols-2">
-            {posts.map((post) => (
-              <PostCard key={post.slug} post={post} />
-            ))}
-          </div>
+        {pagePosts.length ? (
+          <>
+            <div className="grid gap-6 md:grid-cols-2">
+              {pagePosts.map((post) => (
+                <PostCard key={post.slug} post={post} />
+              ))}
+            </div>
+            <Pagination basePath={BLOG_SLUG} currentPage={1} totalPages={totalPages} />
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">記事を執筆中です。</p>
         )}
