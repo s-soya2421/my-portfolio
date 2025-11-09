@@ -17,8 +17,8 @@ import {
   paginateBlogPosts
 } from '../../utils';
 
-type BlogPageParams = {
-  page: string;
+type BlogPageProps = {
+  params: Promise<{ page: string }>;
 };
 
 const parsePageNumber = (value: string) => {
@@ -37,8 +37,9 @@ export const generateStaticParams = async () => {
   }));
 };
 
-export const generateMetadata = async ({ params }: { params: BlogPageParams }) => {
-  const pageNumber = parsePageNumber(params.page);
+export const generateMetadata = async ({ params }: BlogPageProps) => {
+  const { page } = await params;
+  const pageNumber = parsePageNumber(page);
   if (!Number.isFinite(pageNumber) || pageNumber < 2) {
     notFound();
   }
@@ -59,8 +60,9 @@ export const generateMetadata = async ({ params }: { params: BlogPageParams }) =
   });
 };
 
-export default async function BlogPaginationPage({ params }: { params: BlogPageParams }) {
-  const pageNumber = parsePageNumber(params.page);
+export default async function BlogPaginationPage({ params }: BlogPageProps) {
+  const { page } = await params;
+  const pageNumber = parsePageNumber(page);
   if (!Number.isFinite(pageNumber) || pageNumber < 2) {
     notFound();
   }
