@@ -22,7 +22,8 @@ const baseButtonClasses =
 const disabledClasses = 'border-border/50 text-muted-foreground opacity-60';
 const controlClasses = 'px-4';
 const numberClasses = 'w-10';
-const inactiveClasses = 'border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground';
+const inactiveClasses =
+  'border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground';
 const activeClasses = 'border-primary bg-primary text-primary-foreground shadow';
 
 const normalizeBasePath = (basePath: string) => {
@@ -39,9 +40,18 @@ const buildHref = (basePath: string, page: number) => {
   return `${prefix}/page/${page}`;
 };
 
-const PaginationControl = ({ children, disabled, href, 'aria-label': ariaLabel }: PaginationControlProps) =>
+const PaginationControl = ({
+  children,
+  disabled,
+  href,
+  'aria-label': ariaLabel,
+}: PaginationControlProps) =>
   disabled ? (
-    <span className={cn(baseButtonClasses, controlClasses, disabledClasses)} aria-disabled="true" aria-label={ariaLabel}>
+    <span
+      className={cn(baseButtonClasses, controlClasses, disabledClasses)}
+      aria-disabled="true"
+      aria-label={ariaLabel}
+    >
       {children}
     </span>
   ) : (
@@ -63,7 +73,10 @@ export const Pagination = ({ basePath, currentPage, totalPages, className }: Pag
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   return (
-    <nav className={cn('flex flex-wrap items-center justify-center gap-2', className)} aria-label="ページ切り替え">
+    <nav
+      className={cn('flex flex-wrap items-center justify-center gap-2', className)}
+      aria-label="ページ切り替え"
+    >
       <PaginationControl
         aria-label="前のページへ"
         disabled={currentPage <= 1}

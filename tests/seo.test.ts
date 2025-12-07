@@ -4,7 +4,7 @@ import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
-  webPageJsonLd
+  webPageJsonLd,
 } from '@/lib/seo';
 import { siteConfig } from '@/lib/site';
 
@@ -18,7 +18,7 @@ describe('SEO helpers', () => {
       image: '/images/test.png',
       publishedTime: '2024-03-01',
       updatedTime: '2024-03-05',
-      tags: ['nextjs']
+      tags: ['nextjs'],
     });
 
     expect(metadata.title).toBe('Test Page');
@@ -47,7 +47,7 @@ describe('SEO helpers', () => {
       description: 'Structured data test',
       datePublished: '2024-02-01',
       slug: '/blog/structured-data',
-      image: '/images/article.png'
+      image: '/images/article.png',
     });
 
     expect(jsonLd['@type']).toBe('BlogPosting');
@@ -55,13 +55,13 @@ describe('SEO helpers', () => {
     expect(jsonLd.dateModified).toBe('2024-02-01');
     expect(jsonLd.url).toBe(`${siteConfig.url}/blog/structured-data`);
     expect(jsonLd.mainEntityOfPage).toEqual({
-      '@id': `${siteConfig.url}/blog/structured-data#webpage`
+      '@id': `${siteConfig.url}/blog/structured-data#webpage`,
     });
     expect(jsonLd.image).toBe(`${siteConfig.url}/images/article.png`);
     expect(jsonLd.inLanguage).toBe(siteConfig.defaultLocale);
     expect(Array.isArray(jsonLd.author)).toBe(true);
     expect(jsonLd.author[0]).toMatchObject({
-      '@id': `${siteConfig.url}#person`
+      '@id': `${siteConfig.url}#person`,
     });
   });
 
@@ -71,8 +71,8 @@ describe('SEO helpers', () => {
       items: [
         { name: 'Home', url: '/' },
         { name: 'Projects', url: '/projects' },
-        { name: 'Sample', url: '/projects/sample' }
-      ]
+        { name: 'Sample', url: '/projects/sample' },
+      ],
     });
 
     expect(breadcrumbs['@type']).toBe('BreadcrumbList');
@@ -81,7 +81,7 @@ describe('SEO helpers', () => {
     expect(breadcrumbs.itemListElement[2]).toMatchObject({
       position: 3,
       name: 'Sample',
-      item: `${siteConfig.url}/projects/sample`
+      item: `${siteConfig.url}/projects/sample`,
     });
   });
 
@@ -91,15 +91,15 @@ describe('SEO helpers', () => {
       title: 'Sample Project',
       description: 'Sample project description',
       type: 'Article',
-      includeBreadcrumb: true
+      includeBreadcrumb: true,
     });
 
     expect(webPage['@type']).toBe('Article');
     expect(webPage.breadcrumb).toEqual({
-      '@id': `${siteConfig.url}/projects/sample#breadcrumb`
+      '@id': `${siteConfig.url}/projects/sample#breadcrumb`,
     });
     expect(webPage.isPartOf).toEqual({
-      '@id': `${siteConfig.url}#website`
+      '@id': `${siteConfig.url}#website`,
     });
   });
 
@@ -108,8 +108,8 @@ describe('SEO helpers', () => {
       slug: '/projects',
       items: [
         { name: 'Project A', url: '/projects/project-a', description: 'Project A summary' },
-        { name: 'Project B', url: '/projects/project-b' }
-      ]
+        { name: 'Project B', url: '/projects/project-b' },
+      ],
     });
 
     expect(itemList['@type']).toBe('ItemList');
@@ -117,7 +117,7 @@ describe('SEO helpers', () => {
     expect(itemList.itemListElement[0]).toMatchObject({
       position: 1,
       name: 'Project A',
-      item: `${siteConfig.url}/projects/project-a`
+      item: `${siteConfig.url}/projects/project-a`,
     });
   });
 });

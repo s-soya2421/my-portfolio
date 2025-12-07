@@ -8,12 +8,12 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       reporter: ['text', 'lcov'],
-      provider: 'v8'
-    }
+      provider: 'v8',
+    },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '.')
-    }
-  }
+      '@': path.resolve(__dirname, '.'),
+    },
+  },
 });

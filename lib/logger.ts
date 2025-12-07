@@ -4,7 +4,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
-  error: 3
+  error: 3,
 };
 
 const getCurrentLogLevel = (): LogLevel => {
@@ -46,5 +46,5 @@ export const logger = {
     if (shouldLog('error')) {
       console.error(formatMessage('error', message, meta));
     }
-  }
+  },
 };

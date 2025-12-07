@@ -3,18 +3,18 @@ import { notFound } from 'next/navigation';
 import { SectionHeader } from '@/components/sections/section-header';
 import { PostCard } from '@/components/cards/post-card';
 import { Pagination } from '@/components/shared/pagination';
-import { buildBreadcrumbJsonLd, buildItemListJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
 import {
-  BLOG_META_DESCRIPTION,
-  BLOG_SECTION_COPY,
-  BLOG_SLUG,
-  BLOG_TITLE
-} from '../../constants';
+  buildBreadcrumbJsonLd,
+  buildItemListJsonLd,
+  buildMetadata,
+  webPageJsonLd,
+} from '@/lib/seo';
+import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from '../../constants';
 import {
   getAllBlogPosts,
   getBlogPagePath,
   getTotalBlogPages,
-  paginateBlogPosts
+  paginateBlogPosts,
 } from '../../utils';
 
 type BlogPageProps = {
@@ -33,7 +33,7 @@ export const generateStaticParams = async () => {
     return [];
   }
   return Array.from({ length: totalPages - 1 }, (_, index) => ({
-    page: String(index + 2)
+    page: String(index + 2),
   }));
 };
 
@@ -56,7 +56,7 @@ export const generateMetadata = async ({ params }: BlogPageProps) => {
   return buildMetadata({
     title: `${BLOG_TITLE} | ページ ${pageNumber}`,
     description: `${BLOG_META_DESCRIPTION}（ページ ${pageNumber}）`,
-    slug
+    slug,
   });
 };
 
@@ -80,8 +80,8 @@ export default async function BlogPaginationPage({ params }: BlogPageProps) {
     slug,
     items: [
       { name: 'ホーム', url: '/' },
-      { name: BLOG_TITLE, url: BLOG_SLUG }
-    ]
+      { name: BLOG_TITLE, url: BLOG_SLUG },
+    ],
   });
 
   const blogPageJson = webPageJsonLd({
@@ -89,7 +89,7 @@ export default async function BlogPaginationPage({ params }: BlogPageProps) {
     title: `${BLOG_TITLE} | ページ ${pageNumber}`,
     description: BLOG_META_DESCRIPTION,
     type: 'CollectionPage',
-    includeBreadcrumb: true
+    includeBreadcrumb: true,
   });
 
   const postsListJson = pagePosts.length
@@ -98,8 +98,8 @@ export default async function BlogPaginationPage({ params }: BlogPageProps) {
         items: pagePosts.map((post) => ({
           name: post.title,
           url: `/blog/${post.slug}`,
-          description: post.description
-        }))
+          description: post.description,
+        })),
       })
     : null;
 

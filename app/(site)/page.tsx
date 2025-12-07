@@ -11,13 +11,13 @@ import { buildBreadcrumbJsonLd, buildItemListJsonLd, webPageJsonLd } from '@/lib
 export default async function HomePage() {
   const [projects, posts] = await Promise.all([
     loadCollection<ProjectFrontmatter>('projects'),
-    loadCollection<BlogFrontmatter>('blog')
+    loadCollection<BlogFrontmatter>('blog'),
   ]);
   const personalProjects = projects.filter((project) => project.role === '個人開発');
 
   const homepageBreadcrumb = buildBreadcrumbJsonLd({
     slug: '/',
-    items: [{ name: 'ホーム', url: '/' }]
+    items: [{ name: 'ホーム', url: '/' }],
   });
 
   const homepageWebPage = webPageJsonLd({
@@ -25,7 +25,7 @@ export default async function HomePage() {
     title: siteConfig.name,
     description: siteConfig.description,
     type: 'ProfilePage',
-    includeBreadcrumb: true
+    includeBreadcrumb: true,
   });
 
   const highlightItems = [
@@ -33,13 +33,13 @@ export default async function HomePage() {
       name: project.title,
       url: `/projects/${project.slug}`,
       description: project.description,
-      image: project.cover
+      image: project.cover,
     })),
     ...posts.slice(0, 2).map((post) => ({
       name: post.title,
       url: `/blog/${post.slug}`,
-      description: post.description
-    }))
+      description: post.description,
+    })),
   ];
 
   const highlightList = highlightItems.length

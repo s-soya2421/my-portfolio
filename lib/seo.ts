@@ -18,7 +18,7 @@ export const baseMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
     default: siteConfig.name,
-    template: `%s | ${siteConfig.name}`
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   keywords: siteConfig.keywords,
@@ -26,7 +26,7 @@ export const baseMetadata: Metadata = {
   creator: siteConfig.author,
   publisher: siteConfig.author,
   alternates: {
-    canonical: siteConfig.url
+    canonical: siteConfig.url,
   },
   openGraph: {
     type: 'website',
@@ -35,18 +35,18 @@ export const baseMetadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [defaultOgImage],
-    locale: 'ja_JP'
+    locale: 'ja_JP',
   },
   twitter: {
     card: 'summary_large_image',
     creator: '',
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [defaultOgImage]
+    images: [defaultOgImage],
   },
   icons: {
-    shortcut: '/favicon.ico'
-  }
+    shortcut: '/favicon.ico',
+  },
 };
 
 export type MetadataInput = {
@@ -68,7 +68,7 @@ export const buildMetadata = ({
   image,
   publishedTime,
   updatedTime,
-  tags
+  tags,
 }: MetadataInput): Metadata => {
   const url = slug ? `${siteConfig.url}${slug}` : siteConfig.url;
   const ogImage = image ? `${siteConfig.url}${image}` : defaultOgImage;
@@ -77,7 +77,7 @@ export const buildMetadata = ({
     title,
     description,
     alternates: {
-      canonical: url
+      canonical: url,
     },
     openGraph: {
       ...baseMetadata.openGraph,
@@ -87,19 +87,19 @@ export const buildMetadata = ({
       description,
       images: [ogImage],
       ...(publishedTime && {
-        publishedTime
+        publishedTime,
       }),
       ...(updatedTime && {
-        modifiedTime: updatedTime
+        modifiedTime: updatedTime,
       }),
-      ...(tags && { tags })
+      ...(tags && { tags }),
     },
     twitter: {
       ...baseMetadata.twitter,
       title,
       description,
-      images: [ogImage]
-    }
+      images: [ogImage],
+    },
   };
 };
 
@@ -112,13 +112,13 @@ export const websiteJsonLd = {
   description: siteConfig.description,
   inLanguage: siteConfig.defaultLocale,
   publisher: {
-    '@id': `${siteConfig.url}#person`
+    '@id': `${siteConfig.url}#person`,
   },
   potentialAction: {
     '@type': 'SearchAction',
     target: `${siteConfig.url}/search?q={search_term_string}`,
-    'query-input': 'required name=search_term_string'
-  }
+    'query-input': 'required name=search_term_string',
+  },
 };
 
 export const personJsonLd = {
@@ -128,7 +128,7 @@ export const personJsonLd = {
   name: siteConfig.author,
   email: siteConfig.email,
   url: siteConfig.url,
-  sameAs: [siteConfig.social.github, siteConfig.social.x, siteConfig.social.linkedin]
+  sameAs: [siteConfig.social.github, siteConfig.social.x, siteConfig.social.linkedin],
 };
 
 export const articleJsonLd = (params: {
@@ -148,27 +148,27 @@ export const articleJsonLd = (params: {
   dateModified: params.dateModified ?? params.datePublished,
   url: `${siteConfig.url}${params.slug}`,
   mainEntityOfPage: {
-    '@id': webPageIdFor(params.slug)
+    '@id': webPageIdFor(params.slug),
   },
   author: [
     {
       '@type': 'Person',
       '@id': `${siteConfig.url}#person`,
-      name: siteConfig.author
-    }
+      name: siteConfig.author,
+    },
   ],
   publisher: {
     '@type': 'Person',
     '@id': `${siteConfig.url}#person`,
-    name: siteConfig.author
+    name: siteConfig.author,
   },
   keywords: params.tags ?? [],
   inLanguage: siteConfig.defaultLocale,
   ...(params.image
     ? {
-        image: absoluteUrl(params.image)
+        image: absoluteUrl(params.image),
       }
-    : {})
+    : {}),
 });
 
 export const breadcrumbJsonLd = (items: BreadcrumbItem[]) =>
@@ -192,15 +192,15 @@ export const webPageJsonLd = (params: {
     description: params.description,
     inLanguage: siteConfig.defaultLocale,
     isPartOf: {
-      '@id': `${siteConfig.url}#website`
+      '@id': `${siteConfig.url}#website`,
     },
     ...(params.includeBreadcrumb
       ? {
           breadcrumb: {
-            '@id': breadcrumbIdFor(slug)
-          }
+            '@id': breadcrumbIdFor(slug),
+          },
         }
-      : {})
+      : {}),
   };
 };
 
@@ -212,8 +212,8 @@ export const buildBreadcrumbJsonLd = (params: { slug: string; items: BreadcrumbI
     '@type': 'ListItem',
     position: index + 1,
     name: item.name,
-    item: absoluteUrl(item.url)
-  }))
+    item: absoluteUrl(item.url),
+  })),
 });
 
 export const buildItemListJsonLd = (params: {
@@ -229,6 +229,6 @@ export const buildItemListJsonLd = (params: {
     name: item.name,
     item: absoluteUrl(item.url),
     ...(item.description ? { description: item.description } : {}),
-    ...(item.image ? { image: absoluteUrl(item.image) } : {})
-  }))
+    ...(item.image ? { image: absoluteUrl(item.image) } : {}),
+  })),
 });

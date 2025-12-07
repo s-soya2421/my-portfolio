@@ -108,38 +108,38 @@ export const compileContent = async <T extends BaseFrontmatter>(
   try {
     const source = await fs.readFile(filePath, 'utf8');
 
-  const { content, frontmatter } = await compileMDX<T>({
-    source,
-    options: {
-      parseFrontmatter: true,
-      mdxOptions: {
-        remarkPlugins: [remarkGfm],
-        rehypePlugins: [rehypeSlug, [rehypeAutolinkHeadings, { behavior: 'wrap' }]]
-      }
-    },
-    components: mdxComponents
-  });
-
-  const fm = frontmatter as T;
-
-  let jsonLd: Record<string, unknown> | undefined;
-  if (collection !== 'pages' && fm.date) {
-    jsonLd = articleJsonLd({
-      title: fm.title,
-      description: fm.description,
-      datePublished: fm.date,
-      dateModified: fm.updated,
-      slug: `/${collection}/${slug}`,
-      tags: fm.tags,
-      image: fm.cover
+    const { content, frontmatter } = await compileMDX<T>({
+      source,
+      options: {
+        parseFrontmatter: true,
+        mdxOptions: {
+          remarkPlugins: [remarkGfm],
+          rehypePlugins: [rehypeSlug, [rehypeAutolinkHeadings, { behavior: 'wrap' }]],
+        },
+      },
+      components: mdxComponents,
     });
-  }
 
-  if (collection === 'blog') {
-    (fm as BlogFrontmatter).readingTime = estimateReadingTime(source);
-  }
+    const fm = frontmatter as T;
 
-  return { frontmatter: fm, content, slug, jsonLd };
+    let jsonLd: Record<string, unknown> | undefined;
+    if (collection !== 'pages' && fm.date) {
+      jsonLd = articleJsonLd({
+        title: fm.title,
+        description: fm.description,
+        datePublished: fm.date,
+        dateModified: fm.updated,
+        slug: `/${collection}/${slug}`,
+        tags: fm.tags,
+        image: fm.cover,
+      });
+    }
+
+    if (collection === 'blog') {
+      (fm as BlogFrontmatter).readingTime = estimateReadingTime(source);
+    }
+
+    return { frontmatter: fm, content, slug, jsonLd };
   } catch (error) {
     logger.error('Failed to compile content', { collection, slug, error });
     throw error;
@@ -149,6 +149,7 @@ export const compileContent = async <T extends BaseFrontmatter>(
 export const getProjectBySlug = async (slug: string) =>
   compileContent<ProjectFrontmatter>('projects', slug);
 
-export const getBlogPostBySlug = async (slug: string) => compileContent<BlogFrontmatter>('blog', slug);
+export const getBlogPostBySlug = async (slug: string) =>
+  compileContent<BlogFrontmatter>('blog', slug);
 
 export const getPageBySlug = async (slug: string) => compileContent<PageFrontmatter>('pages', slug);

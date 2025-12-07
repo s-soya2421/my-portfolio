@@ -8,7 +8,7 @@ import { useI18n } from '@/components/providers/i18n-provider';
 
 export const ProjectsGrid = ({
   projects,
-  tags
+  tags,
 }: {
   projects: (ProjectFrontmatter & { slug: string })[];
   tags: string[];

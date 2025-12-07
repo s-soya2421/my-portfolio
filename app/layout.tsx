@@ -11,25 +11,27 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 const sans = Noto_Sans_JP({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-sans'
+  variable: '--font-sans',
 });
 
 const mono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-mono'
+  variable: '--font-mono',
 });
 
 export const metadata: Metadata = baseMetadata;
 
 export const viewport: Viewport = {
-  themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#09090b' }, { color: '#ffffff' }]
+  themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#09090b' }, { color: '#ffffff' }],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang={siteConfig.defaultLocale} suppressHydrationWarning>
-      <body className={`${sans.variable} ${mono.variable} font-sans min-h-screen bg-background text-foreground`}>
+      <body
+        className={`${sans.variable} ${mono.variable} min-h-screen bg-background font-sans text-foreground`}
+      >
         <Providers>{children}</Providers>
         <Analytics />
         <SpeedInsights />

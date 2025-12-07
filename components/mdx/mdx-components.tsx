@@ -38,8 +38,11 @@ export const mdxComponents: MDXComponents = {
   ),
   blockquote: ({ className, ...props }) => (
     <blockquote
-      className={cn('mt-6 border-l-4 border-primary/40 pl-4 italic text-muted-foreground', className)}
+      className={cn(
+        'mt-6 border-l-4 border-primary/40 pl-4 italic text-muted-foreground',
+        className
+      )}
       {...props}
     />
-  )
+  ),
 };

@@ -4,11 +4,7 @@ import Script from 'next/script';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
-import {
-  getProjectBySlug,
-  loadCollection,
-  type ProjectFrontmatter
-} from '@/lib/content';
+import { getProjectBySlug, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 
@@ -33,14 +29,14 @@ export async function generateMetadata({ params }: ProjectPageProps) {
       image: frontmatter.cover,
       publishedTime: frontmatter.date,
       updatedTime: frontmatter.updated,
-      tags: frontmatter.tags
+      tags: frontmatter.tags,
     });
   } catch (error) {
     logger.error('Failed to generate metadata for project', { slug, error });
     return buildMetadata({
       title: 'Project',
       description: 'プロジェクト詳細',
-      slug: '/projects'
+      slug: '/projects',
     });
   }
 }
@@ -54,15 +50,15 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
       items: [
         { name: 'ホーム', url: '/' },
         { name: 'Projects', url: '/projects' },
-        { name: frontmatter.title, url: `/projects/${slug}` }
-      ]
+        { name: frontmatter.title, url: `/projects/${slug}` },
+      ],
     });
     const projectDetailWebPage = webPageJsonLd({
       slug: `/projects/${slug}`,
       title: frontmatter.title,
       description: frontmatter.description,
       type: 'Article',
-      includeBreadcrumb: true
+      includeBreadcrumb: true,
     });
 
     return (
@@ -73,11 +69,14 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           </Link>
         </Button>
         <div className="space-y-4">
-          <h1 className="text-3xl font-bold text-balance md:text-4xl">{frontmatter.title}</h1>
+          <h1 className="text-balance text-3xl font-bold md:text-4xl">{frontmatter.title}</h1>
           <p className="max-w-3xl text-lg text-muted-foreground">{frontmatter.description}</p>
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
             {frontmatter.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground">
+              <span
+                key={tag}
+                className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground"
+              >
                 {tag}
               </span>
             ))}

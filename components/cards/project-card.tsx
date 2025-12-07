@@ -3,7 +3,14 @@ import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 import type { ProjectFrontmatter } from '@/lib/content';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug: string } }) => {
@@ -58,7 +65,9 @@ export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug:
             {metrics.map(([label, value]) => (
               <div
                 key={label}
-                className={cn('rounded-2xl border border-border/60 bg-muted/40 px-3 py-2 text-muted-foreground')}
+                className={cn(
+                  'rounded-2xl border border-border/60 bg-muted/40 px-3 py-2 text-muted-foreground'
+                )}
               >
                 <p className="font-semibold text-foreground">{value}</p>
                 <p className="text-xs capitalize">{label.replace(/_/g, ' ')}</p>
@@ -70,19 +79,32 @@ export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug:
       <CardFooter className="flex-col items-start gap-2">
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
           {project.tech.slice(0, 6).map((tech) => (
-            <span key={tech} className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground">
+            <span
+              key={tech}
+              className="rounded-full bg-secondary px-3 py-1 text-secondary-foreground"
+            >
               {tech}
             </span>
           ))}
         </div>
         <div className="flex gap-3 text-sm font-medium">
           {project.links?.demo ? (
-            <Link href={project.links.demo} target="_blank" rel="noopener noreferrer" className="text-primary">
+            <Link
+              href={project.links.demo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary"
+            >
               Demo
             </Link>
           ) : null}
           {project.links?.repo ? (
-            <Link href={project.links.repo} target="_blank" rel="noopener noreferrer" className="text-primary">
+            <Link
+              href={project.links.repo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary"
+            >
               Repo
             </Link>
           ) : null}

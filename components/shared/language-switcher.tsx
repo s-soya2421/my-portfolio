@@ -16,7 +16,9 @@ export const LanguageSwitcher = () => {
           onClick={() => setLocale(code)}
           className={cn(
             'rounded-full px-2 py-1 uppercase transition-colors',
-            locale === code ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground'
+            locale === code
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-muted-foreground'
           )}
           aria-pressed={locale === code}
         >

@@ -9,7 +9,7 @@ export const formatDate = (date: string, locale = 'ja-JP') =>
   new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   }).format(new Date(date));
 
 export const uniqueArray = <T>(items: T[]): T[] => [...new Set(items)];

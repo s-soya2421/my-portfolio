@@ -18,7 +18,7 @@ export const Hero = () => {
         transition={{ duration: 0.6 }}
       >
         <p className="text-sm text-primary/80">{dictionary.hero.greeting}</p>
-        <h1 className="mt-3 text-4xl font-bold tracking-tight text-balance md:text-5xl">
+        <h1 className="mt-3 text-balance text-4xl font-bold tracking-tight md:text-5xl">
           {dictionary.hero.title}
         </h1>
         <p className="mt-4 max-w-2xl text-lg text-muted-foreground md:text-xl">

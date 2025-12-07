@@ -37,7 +37,7 @@ export const I18nProvider = ({ children }: { children: React.ReactNode }) => {
   const value: I18nContextValue = {
     locale,
     dictionary,
-    setLocale
+    setLocale,
   };
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

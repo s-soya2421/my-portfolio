@@ -1,19 +1,21 @@
 ---
-title: "Nuxt 3でfailed to load chunk問題とその対応まとめ"
-description: "CloudFront 経由で SSR 配信する Nuxt 3 アプリで sporadic に発生した chunk 読み込みエラーの原因調査と対策メモです。"
-date: "2025-10-10"
-updated: "2025-10-10"
-tags: ["Nuxt3", "SSR", "CloudFront", "Troubleshooting"]
+title: 'Nuxt 3でfailed to load chunk問題とその対応まとめ'
+description: 'CloudFront 経由で SSR 配信する Nuxt 3 アプリで sporadic に発生した chunk 読み込みエラーの原因調査と対策メモです。'
+date: '2025-10-10'
+updated: '2025-10-10'
+tags: ['Nuxt3', 'SSR', 'CloudFront', 'Troubleshooting']
 draft: false
 ---
 
 ## TL;DR
+
 - Nuxt 3 + CloudFront 構成で `Failed to load chunk` が散発し、SSR からのハイドレーションが失敗して 500 エラーが発生。
 - クローラー（Googlebot / Bingbot）による遅延レンダリングが古いバンドルを参照しており、デプロイ差分でチャンク取得が 404 になることが要因と推察。
 - `routeRules` でページキャッシュを厳格化、CloudFront の `_nuxt/*` キャッシュ TTL を 60 日に設定するなどの対策でエラーは大幅に減少。
 - Nuxt 3.17 系でクローラー遅延に対するパッチが入り、エラーはさらに沈静化。ただしリリース頻度が高い場合は継続的な監視が必要。
 
 ## Nuxt 3 SSR × CloudFront × chunk エラー問題
+
 CloudFront を前段に置いた SSR 配信の Nuxt 3 アプリで低頻度ながら以下のエラーが発生していた。
 
 > Failed to load chunk XXXX
@@ -21,6 +23,7 @@ CloudFront を前段に置いた SSR 配信の Nuxt 3 アプリで低頻度な�
 SSR の HTML 内で参照している JS チャンクを取得できず、ブラウザ側でハイドレーションが失敗 → 500 エラーが返る状態。特にアクセスが急増したタイミングでアラートが上がるケースが多かった。
 
 ## 原因
+
 Googlebot や Bingbot などのクローラーが遅延レンダリングを行う際、数週間前のバンドル情報を保持したままアクセスしてくることが原因と推測。
 
 Vercel CTO が公開した以下の記事でも、クローラーによるレンダリングと最新デプロイの間にタイムラグが生じ、結果としてリソースダウンロードに失敗するケースが説明されている。
@@ -29,15 +32,18 @@ Vercel CTO が公開した以下の記事でも、クローラーによるレン
 - [Skew Protection について](https://vercel.com/docs/skew-protection)
 
 ## 対応内容
+
 - `nuxt.config.ts` の `routeRules` でページ単位のキャッシュ制御を明示し、`no-cache, must-revalidate` を指定。
 - CloudFront 側で `_nuxt/*` に対して 60 日の TTL を設定し、チャンク差し替えを最小化。
 - ボットアクセス向けのヘッダー制御を強化し、旧バージョン参照時でもフェッチ失敗を避けられるように整理。
 
 ## 結果と今後
+
 - 対応前は 1 日に 100 件超のエラーが観測されたが、対策後は 0〜3 件程度まで減少。
 - まだ対応から 1 か月弱のため、ボット側が古いバージョンを保持している可能性を考慮しつつモニタリングを継続。
 
 ## 後日談
+
 数か月後、Nuxt 3.17 系のアップデートでボットの遅延レンダリングに対するパッチが入り、`Failed to load chunk` エラーはほぼ発生しなくなった。
 
 ただし、短いリリースサイクルで継続デプロイするプロダクトでは、クローラーが古いチャンクを参照するリスクは完全には消えない。今後もキャッシュ制御とモニタリングを組み合わせ、ユーザー影響が出る前に検知・対処できる体制を維持していきたい。

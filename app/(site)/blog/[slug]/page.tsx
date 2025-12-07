@@ -30,14 +30,14 @@ export async function generateMetadata({ params }: BlogPageProps) {
       image: frontmatter.cover,
       publishedTime: frontmatter.date,
       updatedTime: frontmatter.updated,
-      tags: frontmatter.tags
+      tags: frontmatter.tags,
     });
   } catch (error) {
     logger.error('Failed to generate metadata for blog post', { slug, error });
     return buildMetadata({
       title: 'Blog',
       description: '学びと検証の記録',
-      slug: '/blog'
+      slug: '/blog',
     });
   }
 }
@@ -51,15 +51,15 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
       items: [
         { name: 'ホーム', url: '/' },
         { name: 'Blog', url: '/blog' },
-        { name: frontmatter.title, url: `/blog/${slug}` }
-      ]
+        { name: frontmatter.title, url: `/blog/${slug}` },
+      ],
     });
     const blogDetailWebPage = webPageJsonLd({
       slug: `/blog/${slug}`,
       title: frontmatter.title,
       description: frontmatter.description,
       type: 'Article',
-      includeBreadcrumb: true
+      includeBreadcrumb: true,
     });
 
     return (
@@ -70,7 +70,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
           </Link>
         </Button>
         <header className="space-y-4">
-          <h1 className="text-3xl font-bold text-balance md:text-4xl">{frontmatter.title}</h1>
+          <h1 className="text-balance text-3xl font-bold md:text-4xl">{frontmatter.title}</h1>
           <p className="max-w-3xl text-lg text-muted-foreground">{frontmatter.description}</p>
           <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
             <span>{formatDate(frontmatter.date)}</span>

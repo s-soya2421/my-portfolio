@@ -18,11 +18,19 @@ export const SiteFooter = () => {
       <div className="container flex flex-col gap-4 py-10 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">{dictionary.footer.madeIn}</p>
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} {dictionary.footer.rights}</p>
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {dictionary.footer.rights}
+          </p>
         </div>
         <div className="flex items-center gap-4">
           {social.map(({ icon: Icon, href, label }) => (
-            <Link key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
+            <Link
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+            >
               <Icon className="h-5 w-5 text-muted-foreground transition hover:text-primary" />
             </Link>
           ))}
