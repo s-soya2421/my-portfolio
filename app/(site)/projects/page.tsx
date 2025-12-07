@@ -1,27 +1,32 @@
 import Script from 'next/script';
 import { SectionHeader } from '@/components/sections/section-header';
 import { ProjectsGrid } from '@/components/projects/projects-grid';
-import { buildBreadcrumbJsonLd, buildItemListJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
+import {
+  buildBreadcrumbJsonLd,
+  buildItemListJsonLd,
+  buildMetadata,
+  webPageJsonLd,
+} from '@/lib/seo';
 import { getAllTags, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 
 export const metadata = buildMetadata({
   title: 'Projects',
   description: '課題発見から施策実行まで伴走した案件のアーカイブです。',
-  slug: '/projects'
+  slug: '/projects',
 });
 
 export default async function ProjectsPage() {
   const [projects, tags] = await Promise.all([
     loadCollection<ProjectFrontmatter>('projects'),
-    getAllTags()
+    getAllTags(),
   ]);
 
   const breadcrumb = buildBreadcrumbJsonLd({
     slug: '/projects',
     items: [
       { name: 'ホーム', url: '/' },
-      { name: 'Projects', url: '/projects' }
-    ]
+      { name: 'Projects', url: '/projects' },
+    ],
   });
 
   const projectsPageJson = webPageJsonLd({
@@ -29,7 +34,7 @@ export default async function ProjectsPage() {
     title: 'Projects',
     description: '課題発見から施策実行まで伴走した案件のアーカイブです。',
     type: 'CollectionPage',
-    includeBreadcrumb: true
+    includeBreadcrumb: true,
   });
 
   const projectsListJson = projects.length
@@ -39,8 +44,8 @@ export default async function ProjectsPage() {
           name: project.title,
           url: `/projects/${project.slug}`,
           description: project.description,
-          image: project.cover
-        }))
+          image: project.cover,
+        })),
       })
     : null;
 

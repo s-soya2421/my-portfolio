@@ -19,11 +19,11 @@ export const SiteHeader = () => {
   const close = () => setOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur border-b border-border/50 bg-background/70">
+    <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/70 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-2" onClick={close}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground">
               SS
             </div>
             <span className="hidden text-sm font-semibold leading-tight md:flex">

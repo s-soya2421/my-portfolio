@@ -22,4 +22,5 @@ export const paginateBlogPosts = (posts: BlogListItem[], page: number) => {
   return { pagePosts, totalPages, isValidPage };
 };
 
-export const getBlogPagePath = (page: number) => (page <= 1 ? BLOG_SLUG : `${BLOG_SLUG}/page/${page}`);
+export const getBlogPagePath = (page: number) =>
+  page <= 1 ? BLOG_SLUG : `${BLOG_SLUG}/page/${page}`;

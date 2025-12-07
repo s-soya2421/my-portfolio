@@ -31,12 +31,12 @@ export const ChallengesSection = ({ items }: { items: ChallengeItem[] }) => {
             transition={{ delay: index * 0.05 }}
           >
             <div className="flex h-full flex-col rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm">
-            <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-              <span>{item.status ?? dictionary.sections.challenges}</span>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-            </div>
-            <h3 className="mt-4 text-lg font-semibold text-foreground">{item.title}</h3>
-            <p className="mt-3 flex-1 text-sm text-muted-foreground">{item.description}</p>
+              <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
+                <span>{item.status ?? dictionary.sections.challenges}</span>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-foreground">{item.title}</h3>
+              <p className="mt-3 flex-1 text-sm text-muted-foreground">{item.description}</p>
             </div>
           </motion.div>
         ))}

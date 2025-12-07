@@ -9,7 +9,7 @@ const createPost = (index: number): BlogListItem => ({
   description: 'テスト用の説明文',
   date: `2024-01-${String(index + 1).padStart(2, '0')}`,
   tags: [],
-  slug: `post-${index + 1}`
+  slug: `post-${index + 1}`,
 });
 
 describe('getTotalBlogPages', () => {

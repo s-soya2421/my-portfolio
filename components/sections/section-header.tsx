@@ -4,7 +4,7 @@ export const SectionHeader = ({
   eyebrow,
   title,
   description,
-  className
+  className,
 }: {
   eyebrow: string;
   title: string;
@@ -16,6 +16,8 @@ export const SectionHeader = ({
       {eyebrow}
     </span>
     <h2 className="text-2xl font-bold md:text-3xl">{title}</h2>
-    {description ? <p className="text-sm text-muted-foreground md:text-base">{description}</p> : null}
+    {description ? (
+      <p className="text-sm text-muted-foreground md:text-base">{description}</p>
+    ) : null}
   </div>
 );
