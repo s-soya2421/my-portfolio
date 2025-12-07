@@ -18,17 +18,17 @@
 
 ```md
 ---
-title: "タイトル"
-description: "一覧に表示される 1〜2 行の要約"
-date: "YYYY-MM-DD"
-updated: "YYYY-MM-DD" # 省略可
-tags: ["タグ1", "タグ2"]
-cover: "/images/..."
-role: "役割"           # プロジェクトのみ必須
-tech: ["技術1"]         # プロジェクトのみ必須
+title: 'タイトル'
+description: '一覧に表示される 1〜2 行の要約'
+date: 'YYYY-MM-DD'
+updated: 'YYYY-MM-DD' # 省略可
+tags: ['タグ1', 'タグ2']
+cover: '/images/...'
+role: '役割' # プロジェクトのみ必須
+tech: ['技術1'] # プロジェクトのみ必須
 links:
-  demo: ""
-  repo: ""
+  demo: ''
+  repo: ''
 impact_metrics:
   metric_name: 0
   metric_other: 0

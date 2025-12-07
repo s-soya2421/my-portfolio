@@ -2,14 +2,19 @@ import Script from 'next/script';
 import { SectionHeader } from '@/components/sections/section-header';
 import { PostCard } from '@/components/cards/post-card';
 import { Pagination } from '@/components/shared/pagination';
-import { buildBreadcrumbJsonLd, buildItemListJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
+import {
+  buildBreadcrumbJsonLd,
+  buildItemListJsonLd,
+  buildMetadata,
+  webPageJsonLd,
+} from '@/lib/seo';
 import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from './constants';
 import { getAllBlogPosts, paginateBlogPosts } from './utils';
 
 export const metadata = buildMetadata({
   title: BLOG_TITLE,
   description: BLOG_META_DESCRIPTION,
-  slug: BLOG_SLUG
+  slug: BLOG_SLUG,
 });
 
 export default async function BlogPage() {
@@ -20,8 +25,8 @@ export default async function BlogPage() {
     slug: BLOG_SLUG,
     items: [
       { name: 'ホーム', url: '/' },
-      { name: BLOG_TITLE, url: BLOG_SLUG }
-    ]
+      { name: BLOG_TITLE, url: BLOG_SLUG },
+    ],
   });
 
   const blogPageJson = webPageJsonLd({
@@ -29,7 +34,7 @@ export default async function BlogPage() {
     title: BLOG_TITLE,
     description: BLOG_META_DESCRIPTION,
     type: 'CollectionPage',
-    includeBreadcrumb: true
+    includeBreadcrumb: true,
   });
 
   const postsListJson = pagePosts.length
@@ -38,8 +43,8 @@ export default async function BlogPage() {
         items: pagePosts.map((post) => ({
           name: post.title,
           url: `/blog/${post.slug}`,
-          description: post.description
-        }))
+          description: post.description,
+        })),
       })
     : null;
 

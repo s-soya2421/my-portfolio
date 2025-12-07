@@ -8,12 +8,14 @@ draft: false
 ---
 
 ## TL;DR
+
 - ALB → ECS Fargate (Node 20) でときどき 500 を返し、ログを見ると `timeout` が原因。
 - ALB の `Idle timeout = 60s` に対して、Nuxt (Nitro) が生成する Node サーバーの `keepAliveTimeout` が 5s で短すぎた。
 - ビルド成果物 (`.output/server/chunks/nitro/*.mjs` や `.output/server/index.mjs`) で `server.listen` を呼ぶ前に `keepAliveTimeout` / `headersTimeout` を延長したら解消。
 - Nuxt をアップデートすると成果物のパスやコードが変わるので、ビルド後に `grep "server." -n .output/server -R` で毎回挿し込み位置を確認する。
 
 ## 原因のあたり
+
 AWS 側のメトリクスを見ると ALB の `TargetResponseTime` は短く、ECS の CPU / メモリも余裕がある。  
 一方で `ELB 504` が並んでいたので、ALB とアプリの keep-alive まわりを疑った。
 
@@ -26,6 +28,7 @@ Node.js (Nuxt Nitro) のデフォルトとALBのデフォルト差分のため�
 という矛盾が起きていた説
 
 ## sed で強制的に上書き
+
 ビルド後のファイルを書き換えられれば良いので、CI/CD の「ビルド→最終イメージ作成」のタイミングで以下を挿し込むだけでも動いた。
 
 ```bash
@@ -41,13 +44,14 @@ sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headers
   .output/server/index.mjs
 ```
 
-*ポイント*
+_ポイント_
 
 - `sed` の改行は `\n` で入れる。
 - `server.headersTimeout` は `keepAliveTimeout` より少し長くしないと Node が警告を出す。
 - CI のログにフラグを残すため、`echo '[patch] applied keepAliveTimeout tweak'` を最後に出しておくと安心。
 
 ## Nuxt のアップデート時に注意
+
 Nuxt 3 の minor アップデートでも Nitro のコード生成は結構変わる。  
 `rg "createServer" -n .output/server` や `rg "server." -n .output/server` を毎回流して、`server.listen` の位置が変わっていないかチェックする。
 
@@ -55,6 +59,7 @@ Nuxt 3 の minor アップデートでも Nitro のコード生成は結構変�
 逆に AWS Lambda preset を使うと `server/chunks/app/server.mjs` のような構成になるので、`sed` のパスは必ず `find .output/server -name '*.mjs' | xargs rg -n "server\.listen"` で見つけるようにした。
 
 ## その後
+
 - 挿し込み後は 1 週間ノーアラート。ALB の 5XX も 0 のまま推移。
 - それでも長時間の keep-alive は同時接続数が増えるので、`maxConcurrency` や ECS のタスク数は余裕を持たせる。
 - そろそろ Nitro 側で `NITRO_PRESET_KEEP_ALIVE` みたいな設定が欲しいが、当面はビルド成果物へのパッチでやり過ごす予定。

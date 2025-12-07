@@ -5,7 +5,7 @@ import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
 export const metadata = buildMetadata({
   title: 'About',
   description: '略歴・スキルセット・価値観・登壇歴などをまとめています。',
-  slug: '/about'
+  slug: '/about',
 });
 
 export default async function AboutPage() {
@@ -15,8 +15,8 @@ export default async function AboutPage() {
     slug: '/about',
     items: [
       { name: 'ホーム', url: '/' },
-      { name: frontmatter.title, url: '/about' }
-    ]
+      { name: frontmatter.title, url: '/about' },
+    ],
   });
 
   const aboutPageJson = webPageJsonLd({
@@ -24,14 +24,16 @@ export default async function AboutPage() {
     title: frontmatter.title,
     description: frontmatter.description,
     type: 'AboutPage',
-    includeBreadcrumb: true
+    includeBreadcrumb: true,
   });
 
   return (
     <>
       <section className="container space-y-8 pb-16 pt-12">
         <header className="space-y-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">About</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+            About
+          </span>
           <h1 className="text-3xl font-bold md:text-4xl">{frontmatter.title}</h1>
           <p className="max-w-3xl text-lg text-muted-foreground">{frontmatter.description}</p>
         </header>

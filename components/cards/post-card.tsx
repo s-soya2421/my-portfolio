@@ -10,7 +10,7 @@ export const PostCard = ({ post }: { post: BlogFrontmatter & { slug: string } })
     <Card className="group flex h-full flex-col justify-between">
       <CardHeader>
         <div className="flex flex-col gap-2">
-          <CardTitle className="text-xl font-semibold text-balance">
+          <CardTitle className="text-balance text-xl font-semibold">
             <Link href={`/blog/${post.slug}`}>{post.title}</Link>
           </CardTitle>
           <p className="text-sm text-muted-foreground">

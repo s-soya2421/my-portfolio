@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
 
 export const ProjectsPreview = ({
-  projects
+  projects,
 }: {
   projects: (ProjectFrontmatter & { slug: string })[];
 }) => {
@@ -39,7 +39,9 @@ export const ProjectsPreview = ({
           ))}
         </motion.div>
       ) : (
-        <p className="mt-8 text-sm text-muted-foreground">{dictionary.projects.preparingProjects}</p>
+        <p className="mt-8 text-sm text-muted-foreground">
+          {dictionary.projects.preparingProjects}
+        </p>
       )}
     </section>
   );

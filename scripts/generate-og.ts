@@ -44,8 +44,8 @@ const renderPng = async (svg: string) => {
   const renderer = new Resvg(svg, {
     fitTo: {
       mode: 'width',
-      value: 1200
-    }
+      value: 1200,
+    },
   });
   return renderer.render().asPng();
 };
@@ -62,7 +62,7 @@ const run = async () => {
 
   const [projects, posts] = await Promise.all([
     loadCollection<ProjectFrontmatter>('projects'),
-    loadCollection<BlogFrontmatter>('blog')
+    loadCollection<BlogFrontmatter>('blog'),
   ]);
 
   for (const project of projects) {
