@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { buildLocalePath } from '@/lib/locale';
 import { siteConfig } from '@/lib/site';
 
 export const Hero = () => {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
+  const projectsPath = buildLocalePath('/projects', locale);
 
   return (
     <section className="container pb-16 pt-12">
@@ -26,7 +28,7 @@ export const Hero = () => {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link href="/projects">{dictionary.hero.ctaSecondary}</Link>
+            <Link href={projectsPath}>{dictionary.hero.ctaSecondary}</Link>
           </Button>
         </div>
       </motion.div>

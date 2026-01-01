@@ -1,0 +1,28 @@
+---
+title: 'Fitness SNS Development Notes (In Progress)'
+description: 'A personal product to help build fitness and wellness habits. Building a mobile-first SNS with Next.js and Supabase.'
+date: '2025-10-04'
+tags: ['Next.js', 'Supabase', 'Tailwind', 'Vercel']
+cover: '/images/projects/fitnesssns-cover.svg'
+role: 'Personal project'
+tech: ['Next.js', 'TypeScript', 'Supabase', 'Tailwind CSS', 'shadcn/ui', 'Vercel']
+links:
+  demo: ''
+draft: false
+---
+
+## Concept
+
+A community where people who want to build strength training habits and coaches who want to gather teammates can easily share progress. I am designing a simple mix of training logs and social features so daily reflection feels natural and sustainable.
+
+## Current Focus
+
+- **Information architecture**: Organize posts, exercises, sessions, and rankings, and build APIs that minimize data fetches for each use case.
+- **Experience feel**: Use the Edge Runtime for lightweight responses and Vercel OG for media generation to make the feed easy to read.
+- **Development flow**: Combine Supabase Studio with Prisma schema generation and automate release flows in GitHub Actions to keep schema and types in sync.
+
+## Progress & Learnings
+
+- The fast decision-making speed of solo development works well with managing UI mocks and production code in the same repository.
+- Realtime features need fallbacks for unstable networks, so I switched to a phased rollout approach.
+- For community design, I hypothesize that the quality of "celebrating achievements" messages matters more than heavy gamification for retention.

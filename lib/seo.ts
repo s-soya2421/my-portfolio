@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
-import { siteConfig } from './site';
+import { siteConfig, type SiteLocale } from './site';
+
+const ogLocaleMap: Record<SiteLocale, string> = {
+  ja: 'ja_JP',
+  en: 'en_US',
+};
 
 export type BreadcrumbItem = {
   name: string;
@@ -35,7 +40,7 @@ export const baseMetadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [defaultOgImage],
-    locale: 'ja_JP',
+    locale: ogLocaleMap[siteConfig.defaultLocale],
   },
   twitter: {
     card: 'summary_large_image',
@@ -58,6 +63,7 @@ export type MetadataInput = {
   publishedTime?: string;
   updatedTime?: string;
   tags?: string[];
+  locale?: SiteLocale;
 };
 
 export const buildMetadata = ({
@@ -69,9 +75,11 @@ export const buildMetadata = ({
   publishedTime,
   updatedTime,
   tags,
+  locale,
 }: MetadataInput): Metadata => {
   const url = slug ? `${siteConfig.url}${slug}` : siteConfig.url;
   const ogImage = image ? `${siteConfig.url}${image}` : defaultOgImage;
+  const ogLocale = locale ? ogLocaleMap[locale] : baseMetadata.openGraph?.locale;
   return {
     ...baseMetadata,
     title,
@@ -86,6 +94,7 @@ export const buildMetadata = ({
       title,
       description,
       images: [ogImage],
+      ...(ogLocale ? { locale: ogLocale } : {}),
       ...(publishedTime && {
         publishedTime,
       }),
@@ -139,6 +148,7 @@ export const articleJsonLd = (params: {
   slug: string;
   tags?: string[];
   image?: string;
+  locale?: SiteLocale;
 }): Record<string, unknown> => ({
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -163,7 +173,7 @@ export const articleJsonLd = (params: {
     name: siteConfig.author,
   },
   keywords: params.tags ?? [],
-  inLanguage: siteConfig.defaultLocale,
+  inLanguage: params.locale ?? siteConfig.defaultLocale,
   ...(params.image
     ? {
         image: absoluteUrl(params.image),
@@ -180,6 +190,7 @@ export const webPageJsonLd = (params: {
   description: string;
   type?: string;
   includeBreadcrumb?: boolean;
+  locale?: SiteLocale;
 }) => {
   const slug = params.slug ?? '/';
   const url = absoluteUrl(slug);
@@ -190,7 +201,7 @@ export const webPageJsonLd = (params: {
     url,
     name: params.title,
     description: params.description,
-    inLanguage: siteConfig.defaultLocale,
+    inLanguage: params.locale ?? siteConfig.defaultLocale,
     isPartOf: {
       '@id': `${siteConfig.url}#website`,
     },

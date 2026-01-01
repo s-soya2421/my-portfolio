@@ -9,11 +9,13 @@ import { useI18n } from '@/components/providers/i18n-provider';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
+import { buildLocalePath, stripLocaleFromPath } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 
 export const SiteHeader = () => {
   const pathname = usePathname();
-  const { dictionary } = useI18n();
+  const currentPath = stripLocaleFromPath(pathname ?? '/');
+  const { dictionary, locale } = useI18n();
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -22,7 +24,11 @@ export const SiteHeader = () => {
     <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/70 backdrop-blur">
       <div className="container flex h-16 items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2" onClick={close}>
+          <Link
+            href={buildLocalePath('/', locale)}
+            className="flex items-center gap-2"
+            onClick={close}
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground">
               SS
             </div>
@@ -35,10 +41,10 @@ export const SiteHeader = () => {
           {navigationItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
+              href={buildLocalePath(item.href, locale)}
               className={cn(
                 'text-sm font-medium transition-colors hover:text-primary',
-                pathname === item.href ? 'text-primary' : 'text-muted-foreground'
+                currentPath === item.href ? 'text-primary' : 'text-muted-foreground'
               )}
             >
               {dictionary.navigation[item.key]}
@@ -69,10 +75,10 @@ export const SiteHeader = () => {
             {navigationItems.map((item) => (
               <Link
                 key={item.href}
-                href={item.href}
+                href={buildLocalePath(item.href, locale)}
                 className={cn(
                   'rounded-xl px-4 py-3 text-base font-semibold transition-colors hover:bg-accent/60',
-                  pathname === item.href ? 'bg-primary/10 text-primary' : 'text-foreground'
+                  currentPath === item.href ? 'bg-primary/10 text-primary' : 'text-foreground'
                 )}
                 onClick={close}
               >

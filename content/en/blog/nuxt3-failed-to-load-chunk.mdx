@@ -1,0 +1,49 @@
+---
+title: 'Nuxt 3 Failed to Load Chunk: Causes and Fixes'
+description: 'Investigation notes on sporadic chunk loading errors in a Nuxt 3 SSR app served through CloudFront.'
+date: '2025-10-10'
+updated: '2025-10-10'
+tags: ['Nuxt3', 'SSR', 'CloudFront', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- In Nuxt 3 + CloudFront setups, `Failed to load chunk` occurred sporadically and hydration failed, leading to 500s.
+- Crawlers (Googlebot/Bingbot) performed delayed rendering and referenced old bundles, causing 404s for new deploy chunks.
+- Tightened `routeRules` page caching and set CloudFront `_nuxt/*` TTL to 60 days to stabilize chunks.
+- Nuxt 3.17 added patches for crawler delay; errors dropped further, but continuous monitoring is still needed with frequent releases.
+
+## Nuxt 3 SSR x CloudFront x Chunk Errors
+
+In a Nuxt 3 SSR app behind CloudFront, this error appeared intermittently:
+
+> Failed to load chunk XXXX
+
+The browser could not fetch JS chunks referenced in the SSR HTML, hydration failed, and the app returned 500 errors. Alerts tended to spike when traffic surged.
+
+## Cause
+
+The likely cause: crawlers like Googlebot and Bingbot rendered pages late, while keeping bundle information from weeks ago. When they hit the latest deploy, chunk requests 404.
+
+Vercel CTO wrote about this time gap between crawler rendering and the latest deploy, leading to failed resource downloads:
+
+- [Automatic mitigation of Google and Bing crawl delay, via Vercel's Skew Protection](https://vercel.com/changelog/automatic-mitigation-of-crawler-delay-via-skew-protection)
+- [About Skew Protection](https://vercel.com/docs/skew-protection)
+
+## Mitigation Steps
+
+- Explicit cache control per page using `routeRules`, with `no-cache, must-revalidate`.
+- Set CloudFront `_nuxt/*` TTL to 60 days to avoid chunk swapping issues.
+- Strengthened bot request headers to reduce fetch failures even when older versions are referenced.
+
+## Results and Next Steps
+
+- Before mitigation, over 100 errors per day; after, down to 0-3.
+- It has been less than a month since the change, so monitoring continues while crawlers may still hold old versions.
+
+## Later Update
+
+A few months later, Nuxt 3.17 shipped a patch for delayed crawler rendering, and `Failed to load chunk` errors almost disappeared.
+
+Still, products with short release cycles can never fully eliminate the risk of crawlers referencing old chunks. Cache control and monitoring remain essential to detect and respond before users are affected.
