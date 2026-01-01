@@ -1,20 +1,29 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import type { BlogFrontmatter } from '@/lib/content';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/components/providers/i18n-provider';
+import { buildLocalePath } from '@/lib/locale';
 import { formatDate } from '@/lib/utils';
 
 export const PostCard = ({ post }: { post: BlogFrontmatter & { slug: string } }) => {
+  const { locale } = useI18n();
+  const postPath = buildLocalePath(`/blog/${post.slug}`, locale);
+  const dateLocale = locale === 'en' ? 'en-US' : 'ja-JP';
+  const readLabel = locale === 'en' ? `Read ${post.title}` : `${post.title} を読む`;
+
   return (
     <Card className="group flex h-full flex-col justify-between">
       <CardHeader>
         <div className="flex flex-col gap-2">
           <CardTitle className="text-balance text-xl font-semibold">
-            <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+            <Link href={postPath}>{post.title}</Link>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {formatDate(post.date)} ・ {post.readingTime ?? ''}
+            {formatDate(post.date, dateLocale)} ・ {post.readingTime ?? ''}
           </p>
         </div>
       </CardHeader>
@@ -30,9 +39,9 @@ export const PostCard = ({ post }: { post: BlogFrontmatter & { slug: string } })
           ))}
         </div>
         <Link
-          href={`/blog/${post.slug}`}
+          href={postPath}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:text-primary"
-          aria-label={`${post.title} を読む`}
+          aria-label={readLabel}
         >
           <ArrowUpRight className="h-5 w-5" />
         </Link>

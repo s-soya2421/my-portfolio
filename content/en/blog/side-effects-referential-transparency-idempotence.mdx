@@ -1,0 +1,115 @@
+---
+title: 'Notes on Side Effects, Referential Transparency, and Idempotence'
+description: 'A summary of side effects, referential transparency, and idempotence, aligning scope and examples to reduce confusion in feature discussions.'
+date: '2025-10-31'
+updated: '2025-10-31'
+tags: ['Functional Programming', 'Software Design']
+draft: false
+---
+
+## TL;DR
+
+- A side effect is any observable change outside the scope of evaluating an expression or function. It includes state mutation as well as I/O, logging, and exceptions.
+- Referential transparency means "you can replace an expression with its evaluated value without changing meaning." It breaks when external state is read or modified.
+- Idempotence guarantees that repeating the same operation does not change the result. It is a different axis from referential transparency.
+- When discussing all three, first align on **what object** (expression, function, API) you are talking about.
+
+## The Breadth of "Side Effects"
+
+In one line: side effects are when the world changes somewhere other than the return value.
+
+A side effect is any change observable outside the scope of evaluating an expression or function. That "change" includes not just state updates, but also I/O (HTTP, DB, files, logs, metrics), raising exceptions, updates to arguments/closures/module scope, and mutations of global or shared stores. In these notes, I treat exceptions as side effects because they are observable changes in behavior.
+
+Helpful viewpoints in practice:
+
+- **What is observable**: `console.log` or metric emission is observable regardless of output destination. Any I/O is a side effect.
+- **Does it stack on retries**: if retries send duplicate emails, the side effect is heavy. If eventual consistency holds, risk is lower.
+- **Does it affect business integrity**: duplicate domain events or wallet balance updates are heavy; audit log appends are lighter.
+- **Scope boundary**: I treat "outside" as crossing the function boundary. Mutating arguments, closures, or module variables is observable to the caller.
+
+Aligning these perspectives makes it easier to discuss "which side effects matter this time."
+
+## Referential Transparency = Replaceability
+
+Referential transparency means an expression `e` can be replaced by its evaluated value `v` without changing program meaning. Side effects are an obvious factor, but "external dependency" is just as important.
+
+```ts
+const add = (a: number, b: number) => a + b;
+
+const withLog = (x: number) => {
+  console.log('value', x);
+  return x * 2;
+};
+
+const withMutation = (person: { name: string }) => {
+  person.name = person.name.trim(); // observable change to the caller
+  return person;
+};
+
+const main = () => {
+  const a = add(1, 2); // replaceable with 3
+  const b = withLog(a); // meaning changes with console.log
+  const c = withMutation({ name: '  Alice ' }); // mutates input, breaks transparency
+  return b;
+};
+```
+
+`add` behaves well when replaced by its result, while `withLog` and `withMutation` are not referentially transparent because they have side effects.
+Reading external time or randomness is the same: if repeated calls yield different values, replaceability is lost.
+
+With referential transparency, you can reorder expressions, memoize, and cache sub-expression results. But applications still need I/O, so design comes down to where you isolate "non-transparent" behavior. Also note that read-only operations like `Date.now()`, `Math.random()`, `process.env`, or `localStorage.getItem` do not mutate state, but they still break referential transparency because they can change between calls.
+
+## Idempotence Is About "Number of Times"
+
+Idempotence is the property that **repeating the same operation does not change the result**. Confusion happens because the target can be "function," "HTTP method," or "DB command." Mathematically it is defined as `f(f(x)) = f(x)` for all `x`, and it is unrelated to recursion. In HTTP terms (RFC 9110), `GET`/`PUT`/`DELETE` are idempotent, `POST` is usually not, and `PATCH` depends on design.
+
+- `PUT /users/123` is idempotent if repeating the same body does not change the user state.
+- `POST /users` is non-idempotent if retries keep creating new users.
+- At the function level, `clamp01(x)` or `sortAsc(xs)` are idempotent because applying them twice yields the same result.
+
+Even idempotent operations can have side effects. For example, `PUT /users/123` might append an audit log on each call. The audit table grows, but it can still be acceptable. You must clarify which state needs to remain invariant.
+
+## My Personal Mapping
+
+Here is the mapping I ended up with:
+
+- **Side effects**: a _broad phenomenon_ about "observable change."
+- **Referential transparency**: an _expression-level property_ about "replaceability."
+- **Idempotence**: an _operation-level property_ about "unchanged by repetition."
+
+Side effects are "what happened," referential transparency is "can I replace this expression," and idempotence is "what happens if I repeat it." Aligning the subject and observer makes their relationship clearer.
+
+## Designing Safe Side Effects
+
+- Keep pure computation in the core, push I/O and state changes to the edge.
+- Abstract read-only dependencies (`Clock`, `Random`) and inject them for deterministic tests.
+- For retry-heavy operations, use idempotency keys, pre-assigned IDs, or outbox/saga patterns.
+
+```ts
+const stamp = (x: number, clock: { now: () => number }) => ({
+  v: x,
+  t: clock.now(),
+});
+
+// Idempotent functions where f(f(x)) = f(x)
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+const sortAsc = (xs: number[]) => [...xs].sort((a, b) => a - b);
+
+// HTTP idempotency: neutralize POST with pre-assigned IDs
+// PUT /users/123 { ...payload } // idempotent
+// POST /users     { id: "123", ...payload } // effectively idempotent
+```
+
+## How I Explain It in Teams
+
+In discussions, I try to declare up front which property we care about:
+
+1. **Ease of reasoning at the expression level** -> emphasize referential transparency; wrap with pure functions.
+2. **Retry and retry-safety** -> design APIs/commands to guarantee idempotence.
+3. **Limit external impact** -> enumerate side effects and make intended ones explicit.
+
+In this order, people can align on "what to protect" and "what can be relaxed." In retries, the question "is idempotence enough even if side effects exist?" comes up; making the impact scope visible helps decisions.
+
+## Summary
+
+Side effects, referential transparency, and idempotence are often discussed together, but they refer to different targets. Aligning **which layer**, **which observer**, and **how many repetitions** at the start eliminates most misunderstandings. I plan to use this summary the next time I need to explain these concepts to a new team.

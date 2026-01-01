@@ -1,0 +1,109 @@
+---
+title: 'Started Building llms-txt-maker, an Index Generator for LLMs'
+description: 'Published a monorepo to generate llms.txt and llms-full.txt, and summarized the design, current progress, and upcoming work.'
+date: '2025-10-17'
+updated: '2025-10-17'
+tags: ['LLM', 'Next.js', 'TypeScript']
+draft: false
+---
+
+## TL;DR
+
+- Writing `llms.txt` by hand is tedious, so I published a monorepo to automate generation.
+- The system splits collectors and renderers, and includes a CLI, Next.js adapter, and a sample app.
+- It is still early (v0.1), but Zod-based config validation and sitemap crawling already work.
+
+## Motivation
+
+When you want ChatGPT or other LLM agents to learn your site, you need an index file like `llms.txt`. As blog/docs updates grow, keeping titles and descriptions in sync becomes expensive. So I started building a toolchain that reads sitemaps/Markdown and generates LLM-friendly summaries: [https://github.com/s-soya2421/llms-txt-maker](https://github.com/s-soya2421/llms-txt-maker).
+
+## Monorepo Structure
+
+The monorepo is managed with `pnpm` and Changesets and includes the following packages:
+
+- **`@soya/llms-txt`**: Core library with `defineConfig`, `collectContent`, `render`, and `renderFull`. It aggregates manual inputs, Markdown/MDX, and sitemap crawling.
+- **`@soya/llms-txt-next`**: A thin adapter for serving `llms.txt` from Next.js API routes. Runtime switching is planned.
+- **`@soya/llms-txt-cli`**: Commander-based CLI that reads config and writes `public/llms.txt` with `--dry-run` support.
+- **`examples/next-app`**: WIP sample app to validate a minimal Next.js setup for `/llms.txt`.
+
+## Collector and Renderer Flow
+
+Config files are validated with Zod and shared across modules through `defineConfig`. A typical config looks like this:
+
+```ts
+import { defineConfig } from '@soya/llms-txt';
+
+export default defineConfig({
+  site: { title: 'Example Docs', url: 'https://example.com' },
+  sources: {
+    manual: {
+      items: [
+        {
+          title: 'Getting Started',
+          url: 'https://example.com/start',
+          summary: 'Project onboarding flow',
+          tags: ['guide'],
+        },
+      ],
+    },
+    sitemap: {
+      respectRobotsTxt: true,
+      concurrency: 1,
+      delayMs: 1500,
+      maxSummaryChars: 200,
+    },
+  },
+  renderOptions: {
+    redactPII: true,
+    includeTimestamp: true,
+  },
+});
+```
+
+If `collectContent` can resolve the homepage, it inserts the title and meta description at the top, then lists remaining pages as `##` headings with a single link. `renderFull` adds summarized body content to produce `llms-full.txt`.
+
+## CLI Generation Flow
+
+Because the CLI depends on the `pnpm` workspace, build it first and then run commands. You can override settings temporarily with `--sitemap` or `--max-pages`.
+
+```bash
+pnpm install
+pnpm --filter @soya/llms-txt-cli build
+
+node packages/llms-txt-cli/bin/llms-txt build \
+  --config llms.config.ts \
+  --out public/llms.txt
+
+node packages/llms-txt-cli/bin/llms-txt build \
+  --config llms.config.ts \
+  --sitemap https://example.com/sitemaps/site-index.xml \
+  --max-pages 200 \
+  --out public/llms.txt
+
+node packages/llms-txt-cli/bin/llms-txt build --dry-run
+```
+
+## Integrating with Next.js
+
+For Next.js, you only need to add the adapter to an API route. With `app/` it looks like this:
+
+```ts
+// app/api/llms/route.ts
+import { makeRoute } from '@soya/llms-txt-next';
+import config from '../../../llms.config';
+
+export const { GET } = makeRoute({ config });
+```
+
+The sample app is validating a setup where the generated `public/llms.txt` is included in Vercel static exports.
+
+## What's Next
+
+The core functionality works at a minimal level, and I plan to iterate on the following:
+
+- Add CMS collectors (Strapi, MicroCMS) to support more than static sites.
+- Improve HTML-to-Markdown extraction templates and PII masking.
+- Implement roadmap CLI subcommands like `crawl`, `fetch`, and `build-llms`.
+- Add Edge Runtime support for the Next.js adapter and refine static export options for `/llms.txt`.
+
+Still experimenting in the v0.1 stage, so feedback and use cases are welcome.

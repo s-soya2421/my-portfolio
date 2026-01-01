@@ -8,6 +8,7 @@
    - プロジェクト: `content/projects`
    - ブログ: `content/blog`
    - 固定ページ: `content/pages`
+   - 英語版: `content/en/projects`, `content/en/blog`, `content/en/pages` (日本語版と同じスラッグ)
 2. `kebab-case` のファイル名で `.mdx` を作成します (例: `jamstack-modernization.mdx`)。
 3. 下記 Frontmatter テンプレートを貼り付け、必要な項目を埋めます。
 4. 本文を MDX で記述します。見出しは `##` から始め、論理的な構成(課題→アプローチ→結果)を心掛けてください。

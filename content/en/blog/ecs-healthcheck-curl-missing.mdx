@@ -1,0 +1,63 @@
+---
+title: 'ECS Health Checks Kept Failing Because curl Was Missing'
+description: 'A summary of why a Fargate task kept restarting due to failed health checks, how I fixed it, and how to prevent a recurrence.'
+date: '2025-10-10'
+updated: '2025-10-10'
+tags: ['AWS', 'ECS', 'Fargate']
+draft: false
+---
+
+## TL;DR
+
+- The Fargate task definition used `curl` for health checks, but the base image `node:22-alpine` did not include curl.
+- The command itself failed, so ECS marked tasks as Unhealthy and restarted them in a loop.
+- Fixed by installing curl (`apk add --no-cache curl`) or switching to a check that does not depend on extra packages.
+
+## Context
+
+- Infra: ECS (Fargate) + Application Load Balancer
+- Container base image: `node:22-alpine`
+- ALB health check: `/_health` (app returns `204`)
+
+ALB health checks were green, but ECS tasks stopped every few minutes with HealthCheck messages in `stoppedReason`. App logs showed steady `GET /_health 204`, so HTTP itself seemed fine.
+
+## Root Cause
+
+The task definition used this `healthCheck.command`:
+
+```json
+["CMD-SHELL", "curl -f http://127.0.0.1:1337/_health"]
+```
+
+`node:22-alpine` is a minimal Alpine image and does not include the `curl` binary. The command failed regardless of the HTTP response, so ECS marked the task Unhealthy and restarted it.
+
+## Fastest Recovery
+
+The quickest fix is to install `curl` in the image. Add this to your `Dockerfile` and redeploy.
+
+```Dockerfile
+FROM node:22-alpine
+
+RUN apk add --no-cache curl ca-certificates
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+
+EXPOSE 1337
+CMD ["npm", "run", "start"]
+```
+
+After deploy, tasks started normally and both ECS/ALB checks turned green.
+
+## Prevention and Alternatives
+
+- **Avoid extra packages**: Node.js 18+ includes `fetch`, so you can set `healthCheck.command` to `node -e "fetch('http://127.0.0.1:1337/_health').then(res => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"` without installing curl.
+- **Create a dedicated health endpoint**: Return dependency checks along with HTTP status to speed up incident triage.
+- **Verify tools during build**: Alpine images are small, but design CMD and health checks assuming `curl`/`bash` are absent. Document minimal dependencies with `apk info -L curl` if needed.
+- **Improve monitoring**: Add `HealthCheckFailed` alarms for Fargate tasks because `CloudWatch Logs` alone can miss early signals.
+
+## Summary
+
+Even if ALB checks pass, ECS will restart tasks if the task-level health check fails. When using minimal images, inventory what is and is not included, and plan for alternatives when required tools are missing.

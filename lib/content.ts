@@ -9,6 +9,7 @@ import { mdxComponents } from '@/components/mdx/mdx-components';
 import type { ReactElement } from 'react';
 import { articleJsonLd } from './seo';
 import { logger } from './logger';
+import { siteConfig, type SiteLocale } from './site';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 
@@ -40,6 +41,7 @@ export type BlogFrontmatter = BaseFrontmatter & {
 export type PageFrontmatter = BaseFrontmatter;
 
 export type ContentCollection = 'projects' | 'blog' | 'pages';
+export type ContentLocale = SiteLocale;
 
 type ListItem<T extends BaseFrontmatter> = T & {
   slug: string;
@@ -52,7 +54,12 @@ type CompileResult<T extends BaseFrontmatter> = {
   jsonLd?: Record<string, unknown>;
 };
 
-const getDir = (collection: ContentCollection) => path.join(CONTENT_ROOT, collection);
+const getDir = (collection: ContentCollection, locale: ContentLocale) => {
+  if (locale === siteConfig.defaultLocale) {
+    return path.join(CONTENT_ROOT, collection);
+  }
+  return path.join(CONTENT_ROOT, locale, collection);
+};
 
 const estimateReadingTime = (markdown: string) => {
   const words = markdown.split(/\s+/).length;
@@ -60,9 +67,24 @@ const estimateReadingTime = (markdown: string) => {
   return `${minutes} min read`;
 };
 
-export const loadCollection = async <T extends BaseFrontmatter>(collection: ContentCollection) => {
-  const dir = getDir(collection);
-  const entries = await fs.readdir(dir);
+const getEntries = async (dir: string) => {
+  try {
+    return await fs.readdir(dir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      logger.warn('Content directory not found', { dir });
+      return [];
+    }
+    throw error;
+  }
+};
+
+export const loadCollection = async <T extends BaseFrontmatter>(
+  collection: ContentCollection,
+  locale: ContentLocale = siteConfig.defaultLocale
+) => {
+  const dir = getDir(collection, locale);
+  const entries = await getEntries(dir);
   const list: ListItem<T>[] = [];
 
   for (const file of entries) {
@@ -93,8 +115,8 @@ export const loadCollection = async <T extends BaseFrontmatter>(collection: Cont
   });
 };
 
-export const getAllTags = async () => {
-  const projects = await loadCollection<ProjectFrontmatter>('projects');
+export const getAllTags = async (locale: ContentLocale = siteConfig.defaultLocale) => {
+  const projects = await loadCollection<ProjectFrontmatter>('projects', locale);
   const tags = new Set<string>();
   projects.forEach((project) => project.tags?.forEach((tag) => tags.add(tag)));
   return Array.from(tags).sort();
@@ -102,9 +124,10 @@ export const getAllTags = async () => {
 
 export const compileContent = async <T extends BaseFrontmatter>(
   collection: ContentCollection,
-  slug: string
+  slug: string,
+  locale: ContentLocale = siteConfig.defaultLocale
 ): Promise<CompileResult<T>> => {
-  const filePath = path.join(getDir(collection), `${slug}.mdx`);
+  const filePath = path.join(getDir(collection, locale), `${slug}.mdx`);
   try {
     const source = await fs.readFile(filePath, 'utf8');
 
@@ -124,14 +147,16 @@ export const compileContent = async <T extends BaseFrontmatter>(
 
     let jsonLd: Record<string, unknown> | undefined;
     if (collection !== 'pages' && fm.date) {
+      const localePrefix = locale === siteConfig.defaultLocale ? '' : `/${locale}`;
       jsonLd = articleJsonLd({
         title: fm.title,
         description: fm.description,
         datePublished: fm.date,
         dateModified: fm.updated,
-        slug: `/${collection}/${slug}`,
+        slug: `${localePrefix}/${collection}/${slug}`,
         tags: fm.tags,
         image: fm.cover,
+        locale,
       });
     }
 
@@ -146,10 +171,17 @@ export const compileContent = async <T extends BaseFrontmatter>(
   }
 };
 
-export const getProjectBySlug = async (slug: string) =>
-  compileContent<ProjectFrontmatter>('projects', slug);
+export const getProjectBySlug = async (
+  slug: string,
+  locale: ContentLocale = siteConfig.defaultLocale
+) => compileContent<ProjectFrontmatter>('projects', slug, locale);
 
-export const getBlogPostBySlug = async (slug: string) =>
-  compileContent<BlogFrontmatter>('blog', slug);
+export const getBlogPostBySlug = async (
+  slug: string,
+  locale: ContentLocale = siteConfig.defaultLocale
+) => compileContent<BlogFrontmatter>('blog', slug, locale);
 
-export const getPageBySlug = async (slug: string) => compileContent<PageFrontmatter>('pages', slug);
+export const getPageBySlug = async (
+  slug: string,
+  locale: ContentLocale = siteConfig.defaultLocale
+) => compileContent<PageFrontmatter>('pages', slug, locale);
