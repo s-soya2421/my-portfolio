@@ -7,6 +7,7 @@ type PaginationProps = {
   currentPage: number;
   totalPages: number;
   className?: string;
+  labels?: PaginationLabels;
 };
 
 type PaginationControlProps = {
@@ -40,6 +41,24 @@ const buildHref = (basePath: string, page: number) => {
   return `${prefix}/page/${page}`;
 };
 
+type PaginationLabels = {
+  nav: string;
+  prev: string;
+  next: string;
+  prevAria: string;
+  nextAria: string;
+  pageLabel: (page: number) => string;
+};
+
+const defaultLabels: PaginationLabels = {
+  nav: 'ページ切り替え',
+  prev: '前へ',
+  next: '次へ',
+  prevAria: '前のページへ',
+  nextAria: '次のページへ',
+  pageLabel: (page) => `ページ ${page}`,
+};
+
 const PaginationControl = ({
   children,
   disabled,
@@ -65,24 +84,31 @@ const PaginationControl = ({
     </Link>
   );
 
-export const Pagination = ({ basePath, currentPage, totalPages, className }: PaginationProps) => {
+export const Pagination = ({
+  basePath,
+  currentPage,
+  totalPages,
+  className,
+  labels,
+}: PaginationProps) => {
   if (totalPages <= 1) {
     return null;
   }
 
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const copy = labels ?? defaultLabels;
 
   return (
     <nav
       className={cn('flex flex-wrap items-center justify-center gap-2', className)}
-      aria-label="ページ切り替え"
+      aria-label={copy.nav}
     >
       <PaginationControl
-        aria-label="前のページへ"
+        aria-label={copy.prevAria}
         disabled={currentPage <= 1}
         href={buildHref(basePath, currentPage - 1)}
       >
-        前へ
+        {copy.prev}
       </PaginationControl>
       {pages.map((pageNumber) => {
         const href = buildHref(basePath, pageNumber);
@@ -92,7 +118,7 @@ export const Pagination = ({ basePath, currentPage, totalPages, className }: Pag
             key={pageNumber}
             href={href}
             prefetch={false}
-            aria-label={`ページ ${pageNumber}`}
+            aria-label={copy.pageLabel(pageNumber)}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               baseButtonClasses,
@@ -105,11 +131,11 @@ export const Pagination = ({ basePath, currentPage, totalPages, className }: Pag
         );
       })}
       <PaginationControl
-        aria-label="次のページへ"
+        aria-label={copy.nextAria}
         disabled={currentPage >= totalPages}
         href={buildHref(basePath, currentPage + 1)}
       >
-        次へ
+        {copy.next}
       </PaginationControl>
     </nav>
   );

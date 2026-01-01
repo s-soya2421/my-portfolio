@@ -7,9 +7,11 @@ import { PostCard } from '@/components/cards/post-card';
 import { SectionHeader } from '@/components/sections/section-header';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { buildLocalePath } from '@/lib/locale';
 
 export const BlogPreview = ({ posts }: { posts: (BlogFrontmatter & { slug: string })[] }) => {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
+  const blogPath = buildLocalePath('/blog', locale);
 
   return (
     <section className="container py-12">
@@ -20,7 +22,7 @@ export const BlogPreview = ({ posts }: { posts: (BlogFrontmatter & { slug: strin
           description={dictionary.sections.recentPostsDescription}
         />
         <Button asChild variant="ghost">
-          <Link href="/blog">{dictionary.actions.viewAllPosts}</Link>
+          <Link href={blogPath}>{dictionary.actions.viewAllPosts}</Link>
         </Button>
       </div>
       {posts.length ? (

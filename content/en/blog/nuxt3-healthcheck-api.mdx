@@ -1,0 +1,82 @@
+---
+title: 'Build a Super Simple Health Check API in Nuxt 3'
+description: "How to create a minimal health check endpoint that returns 'ok' using Nuxt 3 server API and use it for ECS or Docker container monitoring."
+date: '2025-10-22'
+updated: '2025-10-22'
+tags: ['Nuxt3', 'HealthCheck', 'AWS', 'Docker']
+draft: false
+---
+
+## TL;DR
+
+- Nuxt 3 server API creates endpoints just by placing files in `server/api/*.ts`.
+- A plain `ok` response makes it easy for ECS/Docker health checks to determine container health.
+- Verify `200 + ok` with `curl` before wiring it into production health checks.
+
+## What Kind of Health Check to Provide
+
+In container environments you always need an endpoint to confirm that the application has started and can respond. When Nuxt SSR and APIs run in the same process, an endpoint that directly checks the Nitro server response is a great minimal setup.
+
+- Requests are GET only
+- Status code is 200
+- Response body is the fixed string `ok`
+
+That is sufficient for load balancers and orchestrators to perform liveness checks.
+
+## Define a Health Check with Nuxt 3 Server API
+
+Place a `.get.ts` file under `server/api` to create a GET endpoint. Nuxt 3/Nitro can return plain strings, so the minimal implementation is just this.
+
+```ts
+// server/api/healthcheck.get.ts
+export default defineEventHandler(() => {
+  return 'ok';
+});
+```
+
+With `npm run dev` running, visiting `http://localhost:3000/api/healthcheck` in a browser or CLI shows `ok`.
+
+```bash
+curl -i http://localhost:3000/api/healthcheck
+# HTTP/1.1 200 OK
+# ...
+# ok
+```
+
+`defineEventHandler` is a Nitro utility that returns its value as the response. You can also return JSON (`return { status: 'ok' }`), but plain text is easier for monitoring systems.
+
+## Example Settings for ECS and Docker
+
+The endpoint can be used directly for container health checks.
+
+- **Dockerfile**
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -fs http://localhost:3000/api/healthcheck || exit 1
+```
+
+- **ECS task definition (excerpt)**
+
+```json
+"healthCheck": {
+  "command": [
+    "CMD-SHELL",
+    "curl -fs http://localhost:3000/api/healthcheck || exit 1"
+  ],
+  "interval": 30,
+  "timeout": 5,
+  "retries": 3,
+  "startPeriod": 10
+}
+```
+
+If the application crashes or Nitro fails to boot, the endpoint will return 5xx or time out, and ECS/Docker will restart the container.
+
+## Operational Tips
+
+- **Limit exposure**: If the endpoint should not be public, restrict it via ALB/API Gateway IP rules.
+- **Consider dependencies**: If you also need to check RDBs or external APIs, add a separate `/api/readyz` for readiness checks.
+- **Watch log noise**: Health checks run frequently. Filter them in your log pipeline or allow caching via `routeRules` to reduce noise.
+
+Even a minimal health check makes it easier to detect hung containers. Nuxt 3 server APIs require no extra setup, so starting with a simple `ok` endpoint is a quick win.

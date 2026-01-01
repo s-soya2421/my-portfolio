@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
@@ -11,10 +13,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useI18n } from '@/components/providers/i18n-provider';
+import { buildLocalePath } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 
 export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug: string } }) => {
+  const { locale } = useI18n();
   const metrics = project.impact_metrics ? Object.entries(project.impact_metrics) : [];
+  const projectPath = buildLocalePath(`/projects/${project.slug}`, locale);
+  const detailLabel =
+    locale === 'en' ? `View details for ${project.title}` : `${project.title} 詳細を見る`;
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden">
@@ -34,7 +42,7 @@ export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug:
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-xl font-semibold">
-              <Link href={`/projects/${project.slug}`}>{project.title}</Link>
+              <Link href={projectPath}>{project.title}</Link>
             </CardTitle>
             <CardDescription className="mt-1 flex flex-wrap items-center gap-2 text-xs">
               <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
@@ -43,9 +51,9 @@ export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug:
             </CardDescription>
           </div>
           <Link
-            href={`/projects/${project.slug}`}
+            href={projectPath}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition hover:text-primary"
-            aria-label={`${project.title} 詳細を見る`}
+            aria-label={detailLabel}
           >
             <ArrowUpRight className="h-5 w-5" />
           </Link>

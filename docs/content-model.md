@@ -41,13 +41,21 @@ content/
 │   └── location-share.mdx
 ├── blog/
 │   └── <post-slug>.mdx
-└── pages/
-    └── about.mdx
+├── pages/
+│   └── about.mdx
+└── en/
+    ├── projects/
+    │   └── <project-slug>.mdx
+    ├── blog/
+    │   └── <post-slug>.mdx
+    └── pages/
+        └── about.mdx
 ```
 
 - ファイル名はスラッグと一致させます。
 - 画像は `public/images/<collection>/` に保存します。
 - OG 画像は `npm run og` 実行時に `public/og/` へ自動生成されます。
+- 英語版は `content/en/<collection>/` に配置し、日本語版と同じスラッグを使います。
 
 ## バリデーション
 

@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { FALLBACK_LOCALE, getDictionary, isValidLocale, type Dictionary } from '@/lib/i18n';
+import { usePathname } from 'next/navigation';
+import { FALLBACK_LOCALE, getDictionary, type Dictionary } from '@/lib/i18n';
+import { getLocaleFromPath } from '@/lib/locale';
 import type { SiteLocale } from '@/lib/site';
 
 const I18N_STORAGE_KEY = 'portfolio-locale';
@@ -15,22 +17,26 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | undefined>(undefined);
 
 export const I18nProvider = ({ children }: { children: React.ReactNode }) => {
-  const [locale, setLocaleState] = useState<SiteLocale>(() => FALLBACK_LOCALE);
-  const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(FALLBACK_LOCALE));
+  const pathname = usePathname() ?? '/';
+  const routeLocale = getLocaleFromPath(pathname);
+  const [locale, setLocaleState] = useState<SiteLocale>(() => routeLocale ?? FALLBACK_LOCALE);
+  const [dictionary, setDictionary] = useState<Dictionary>(() => getDictionary(routeLocale));
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem(I18N_STORAGE_KEY);
-    if (stored && isValidLocale(stored)) {
-      setLocale(stored as SiteLocale);
+    setLocaleState(routeLocale);
+    setDictionary(getDictionary(routeLocale));
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(I18N_STORAGE_KEY, routeLocale);
+      document.documentElement.lang = routeLocale;
     }
-  }, []);
+  }, [routeLocale]);
 
   const setLocale = (value: SiteLocale) => {
     setLocaleState(value);
     setDictionary(getDictionary(value));
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(I18N_STORAGE_KEY, value);
+      document.documentElement.lang = value;
     }
   };
 

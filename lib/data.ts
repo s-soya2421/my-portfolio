@@ -18,3 +18,24 @@ export const challenges = [
     status: 'チャレンジ中',
   },
 ];
+
+export const challengesEn = [
+  {
+    title: 'Designing automation workflows',
+    description:
+      'Build a Human-in-the-Loop system where AI handles repetitive tasks and humans focus on final approval.',
+    status: 'In progress',
+  },
+  {
+    title: 'Stabilizing AI outputs',
+    description:
+      'Improve consistency of stochastic AI answers and research agent.md patterns to express a personal style.',
+    status: 'In progress',
+  },
+  {
+    title: 'Shifting toward creativity',
+    description:
+      'Use the time saved to focus on music production, video expression, and UI/UX design.',
+    status: 'In progress',
+  },
+];

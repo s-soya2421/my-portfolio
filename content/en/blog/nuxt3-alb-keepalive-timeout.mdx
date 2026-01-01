@@ -1,0 +1,63 @@
+---
+title: 'Notes on Sporadic 500s in Nuxt 3 x ECS Fargate x ALB'
+description: 'Why a Nuxt 3 app behind ALB returned sporadic 500 (timeout) errors and how aligning Nitro keep-alive settings in the build output fixed it.'
+date: '2025-10-27'
+updated: '2025-10-27'
+tags: ['Nuxt3', 'AWS', 'ECS', 'Fargate', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- ALB -> ECS Fargate (Node 20) occasionally returned 500s with `timeout` in the logs.
+- ALB `Idle timeout = 60s`, while Nuxt (Nitro) generated server `keepAliveTimeout` was 5s.
+- Patching `keepAliveTimeout` / `headersTimeout` before `server.listen` in `.output/server/*.mjs` fixed it.
+- Nuxt updates can change output paths, so always `rg "server." -n .output/server` after build.
+
+## Suspected Cause
+
+AWS metrics showed low `TargetResponseTime` and plenty of ECS CPU/memory headroom, yet `ELB 504` appeared. That pointed to keep-alive mismatch between ALB and the Node server.
+
+Because of the default mismatch between ALB and Node/Nitro:
+
+1. ALB waits
+2. Node server closes the connection earlier
+3. ALB sees a stalled response and returns 504/500
+
+## Force-Patch with sed
+
+Since patching the build output is enough, I injected this during CI/CD after build and before final image creation.
+
+```bash
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/chunks/nitro/nitro.mjs
+```
+
+Insert `62s / 65s` right before `server.listen` so it is longer than ALB. Depending on the build, `.output/server/index.mjs` might be the main entry, so I patched both.
+
+```bash
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/index.mjs
+```
+
+_Points to note_
+
+- Insert newlines with `\n` in `sed`.
+- `server.headersTimeout` must be slightly longer than `keepAliveTimeout` to avoid Node warnings.
+- Emit a CI log like `echo '[patch] applied keepAliveTimeout tweak'` to confirm the patch ran.
+
+## Watch Out When Updating Nuxt
+
+Even minor Nuxt 3 updates can change Nitro output code. Run `rg "createServer" -n .output/server` or `rg "server." -n .output/server` to confirm the `server.listen` location.
+
+If there is no `chunks/nitro/*.mjs` and only `server/index.mjs` exists, patch only that. For Lambda presets, the path may look like `server/chunks/app/server.mjs`, so always locate it with:
+
+`find .output/server -name '*.mjs' | xargs rg -n "server\.listen"`
+
+## Aftermath
+
+- No alerts for a week after the patch, and ALB 5XX stayed at zero.
+- Longer keep-alives increase concurrent connections, so set `maxConcurrency` and ECS task counts with headroom.
+- I would love a Nitro option like `NITRO_PRESET_KEEP_ALIVE`, but for now the build patch is a practical workaround.
+
+When in doubt, just `grep` for `server.` in the output and patch the right spot.

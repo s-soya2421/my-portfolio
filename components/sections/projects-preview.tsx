@@ -7,13 +7,15 @@ import { ProjectCard } from '@/components/cards/project-card';
 import { SectionHeader } from '@/components/sections/section-header';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { buildLocalePath } from '@/lib/locale';
 
 export const ProjectsPreview = ({
   projects,
 }: {
   projects: (ProjectFrontmatter & { slug: string })[];
 }) => {
-  const { dictionary } = useI18n();
+  const { dictionary, locale } = useI18n();
+  const projectsPath = buildLocalePath('/projects', locale);
 
   return (
     <section className="container py-12">
@@ -24,7 +26,7 @@ export const ProjectsPreview = ({
           description={dictionary.sections.featuredProjectsDescription}
         />
         <Button asChild variant="ghost">
-          <Link href="/projects">{dictionary.actions.viewAllProjects}</Link>
+          <Link href={projectsPath}>{dictionary.actions.viewAllProjects}</Link>
         </Button>
       </div>
       {projects.length ? (
