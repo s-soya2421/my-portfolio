@@ -1,0 +1,28 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97316" />
+      <stop offset="100%" stop-color="#0EA5E9" />
+    </linearGradient>
+    <radialGradient id="glow" cx="78%" cy="18%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.35)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)" rx="48" />
+  <rect width="1200" height="630" fill="url(#glow)" rx="48" />
+  <g opacity="0.45" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none">
+    <circle cx="920" cy="190" r="120" />
+    <circle cx="920" cy="190" r="70" />
+    <circle cx="920" cy="190" r="24" fill="rgba(255,255,255,0.7)" />
+  </g>
+  <text x="100" y="235" font-family="'Inter', sans-serif" font-size="66" font-weight="700" fill="white">
+    Atomic Design Sample
+  </text>
+  <text x="100" y="325" font-family="'Inter', sans-serif" font-size="34" fill="rgba(255,255,255,0.88)">
+    Component hierarchy you can scan at a glance
+  </text>
+  <text x="100" y="420" font-family="'Inter', sans-serif" font-size="28" fill="rgba(255,255,255,0.7)">
+    React / UI Architecture / Design System
+  </text>
+</svg>
