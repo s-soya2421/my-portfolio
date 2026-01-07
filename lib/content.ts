@@ -5,6 +5,7 @@ import { compileMDX } from 'next-mdx-remote/rsc';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import { cache } from 'react';
 import { mdxComponents } from '@/components/mdx/mdx-components';
 import type { ReactElement } from 'react';
 import { articleJsonLd } from './seo';
@@ -79,31 +80,33 @@ const getEntries = async (dir: string) => {
   }
 };
 
-export const loadCollection = async <T extends BaseFrontmatter>(
+const loadCollectionInternal = async <T extends BaseFrontmatter>(
   collection: ContentCollection,
   locale: ContentLocale = siteConfig.defaultLocale
 ) => {
   const dir = getDir(collection, locale);
   const entries = await getEntries(dir);
-  const list: ListItem<T>[] = [];
-
-  for (const file of entries) {
-    if (!file.endsWith('.mdx')) continue;
-    const slug = file.replace(/\.mdx$/, '');
-    const filePath = path.join(dir, file);
-    const source = await fs.readFile(filePath, 'utf8');
-    const { data } = matter(source);
-    const frontmatter = data as T;
-    if (frontmatter.draft) continue;
-    if (collection === 'blog') {
-      if (!frontmatter.date) {
-        logger.error('Blog post missing required date frontmatter', { slug });
-        throw new Error(`Blog post ${slug} is missing required date frontmatter.`);
-      }
-      (frontmatter as BlogFrontmatter).readingTime = estimateReadingTime(source);
-    }
-    list.push({ ...(frontmatter as T), slug });
-  }
+  const list = (
+    await Promise.all(
+      entries.map(async (file) => {
+        if (!file.endsWith('.mdx')) return null;
+        const slug = file.replace(/\.mdx$/, '');
+        const filePath = path.join(dir, file);
+        const source = await fs.readFile(filePath, 'utf8');
+        const { data } = matter(source);
+        const frontmatter = data as T;
+        if (frontmatter.draft) return null;
+        if (collection === 'blog') {
+          if (!frontmatter.date) {
+            logger.error('Blog post missing required date frontmatter', { slug });
+            throw new Error(`Blog post ${slug} is missing required date frontmatter.`);
+          }
+          (frontmatter as BlogFrontmatter).readingTime = estimateReadingTime(source);
+        }
+        return { ...(frontmatter as T), slug } satisfies ListItem<T>;
+      })
+    )
+  ).filter((item): item is ListItem<T> => Boolean(item));
 
   return list.sort((a, b) => {
     const dateA = a.date ? new Date(a.date).getTime() : 0;
@@ -115,6 +118,8 @@ export const loadCollection = async <T extends BaseFrontmatter>(
   });
 };
 
+export const loadCollection = cache(loadCollectionInternal) as typeof loadCollectionInternal;
+
 export const getAllTags = async (locale: ContentLocale = siteConfig.defaultLocale) => {
   const projects = await loadCollection<ProjectFrontmatter>('projects', locale);
   const tags = new Set<string>();
@@ -122,7 +127,7 @@ export const getAllTags = async (locale: ContentLocale = siteConfig.defaultLocal
   return Array.from(tags).sort();
 };
 
-export const compileContent = async <T extends BaseFrontmatter>(
+const compileContentInternal = async <T extends BaseFrontmatter>(
   collection: ContentCollection,
   slug: string,
   locale: ContentLocale = siteConfig.defaultLocale
@@ -170,6 +175,8 @@ export const compileContent = async <T extends BaseFrontmatter>(
     throw error;
   }
 };
+
+export const compileContent = cache(compileContentInternal) as typeof compileContentInternal;
 
 export const getProjectBySlug = async (
   slug: string,

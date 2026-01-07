@@ -32,7 +32,7 @@ export const ProjectsPreview = ({
       {projects.length ? (
         <motion.div
           className="mt-8 grid gap-6 md:grid-cols-2"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 1, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
         >

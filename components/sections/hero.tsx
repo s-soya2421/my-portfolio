@@ -15,7 +15,7 @@ export const Hero = () => {
     <section className="container pb-16 pt-12">
       <motion.div
         className="max-w-3xl"
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 1, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
