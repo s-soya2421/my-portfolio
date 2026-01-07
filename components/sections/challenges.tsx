@@ -25,7 +25,7 @@ export const ChallengesSection = ({ items }: { items: ChallengeItem[] }) => {
         {items.map((item, index) => (
           <motion.div
             key={item.title}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 1, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-100px' }}
             transition={{ delay: index * 0.05 }}
