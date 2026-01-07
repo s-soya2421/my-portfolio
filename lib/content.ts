@@ -83,30 +83,28 @@ const getEntries = async (dir: string) => {
 const loadCollectionInternal = async <T extends BaseFrontmatter>(
   collection: ContentCollection,
   locale: ContentLocale = siteConfig.defaultLocale
-) => {
+): Promise<ListItem<T>[]> => {
   const dir = getDir(collection, locale);
   const entries = await getEntries(dir);
-  const list = (
-    await Promise.all(
-      entries.map(async (file) => {
-        if (!file.endsWith('.mdx')) return null;
-        const slug = file.replace(/\.mdx$/, '');
-        const filePath = path.join(dir, file);
-        const source = await fs.readFile(filePath, 'utf8');
-        const { data } = matter(source);
-        const frontmatter = data as T;
-        if (frontmatter.draft) return null;
-        if (collection === 'blog') {
-          if (!frontmatter.date) {
-            logger.error('Blog post missing required date frontmatter', { slug });
-            throw new Error(`Blog post ${slug} is missing required date frontmatter.`);
-          }
-          (frontmatter as BlogFrontmatter).readingTime = estimateReadingTime(source);
-        }
-        return { ...(frontmatter as T), slug } satisfies ListItem<T>;
-      })
-    )
-  ).filter((item): item is ListItem<T> => Boolean(item));
+  const list: ListItem<T>[] = [];
+
+  for (const file of entries) {
+    if (!file.endsWith('.mdx')) continue;
+    const slug = file.replace(/\.mdx$/, '');
+    const filePath = path.join(dir, file);
+    const source = await fs.readFile(filePath, 'utf8');
+    const { data } = matter(source);
+    const frontmatter = data as T;
+    if (frontmatter.draft) continue;
+    if (collection === 'blog') {
+      if (!frontmatter.date) {
+        logger.error('Blog post missing required date frontmatter', { slug });
+        throw new Error(`Blog post ${slug} is missing required date frontmatter.`);
+      }
+      (frontmatter as BlogFrontmatter).readingTime = estimateReadingTime(source);
+    }
+    list.push({ ...(frontmatter as T), slug });
+  }
 
   return list.sort((a, b) => {
     const dateA = a.date ? new Date(a.date).getTime() : 0;
