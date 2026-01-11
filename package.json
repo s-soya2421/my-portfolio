@@ -6,8 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "serve -s out",
-    "lint": "eslint \"./**/*.{js,jsx,ts,tsx}\"",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx,css}\"",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch",
@@ -36,6 +36,7 @@
     "tailwind-merge": "2.2.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.11",
     "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/typography": "0.5.10",
     "@testing-library/jest-dom": "6.4.2",
