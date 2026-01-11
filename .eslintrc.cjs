@@ -4,6 +4,6 @@ module.exports = {
   ignorePatterns: ['out', '.next', 'dist', 'coverage'],
   rules: {
     '@next/next/no-html-link-for-pages': 'off',
-    'react/jsx-pascal-case': 'off'
-  }
+    'react/jsx-pascal-case': 'off',
+  },
 };

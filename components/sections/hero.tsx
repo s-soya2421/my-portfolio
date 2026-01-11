@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
@@ -13,25 +12,20 @@ export const Hero = () => {
 
   return (
     <section className="container pb-16 pt-12">
-      <motion.div
-        className="max-w-3xl"
-        initial={{ opacity: 1, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <p className="text-sm text-primary/80">{dictionary.hero.greeting}</p>
-        <h1 className="mt-3 text-balance text-4xl font-bold tracking-tight md:text-5xl">
+      <div className="max-w-3xl">
+        <p className="reveal-rise text-sm text-primary/80">{dictionary.hero.greeting}</p>
+        <h1 className="mt-3 text-balance text-4xl font-bold tracking-tight md:text-5xl reveal-rise reveal-delay-1">
           {dictionary.hero.title}
         </h1>
-        <p className="mt-4 max-w-2xl text-lg text-muted-foreground md:text-xl">
+        <p className="mt-4 max-w-2xl text-lg text-muted-foreground md:text-xl reveal-rise reveal-delay-2">
           {dictionary.hero.subtitle}
         </p>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-3 reveal-rise reveal-delay-3">
           <Button asChild size="lg">
             <Link href={projectsPath}>{dictionary.hero.ctaSecondary}</Link>
           </Button>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 };

@@ -6,7 +6,12 @@ import { ChallengesSection } from '@/components/sections/challenges';
 import { loadCollection, type ProjectFrontmatter, type BlogFrontmatter } from '@/lib/content';
 import { challengesEn } from '@/lib/data';
 import { siteConfig } from '@/lib/site';
-import { buildBreadcrumbJsonLd, buildItemListJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
+import {
+  buildBreadcrumbJsonLd,
+  buildItemListJsonLd,
+  buildMetadata,
+  webPageJsonLd,
+} from '@/lib/seo';
 
 const EN_SITE_DESCRIPTION =
   'Portfolio of Soya. Full-stack development and DevOps with a focus on UX and performance.';

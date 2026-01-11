@@ -11,13 +11,9 @@ vi.mock('@/lib/content', () => ({
 }));
 
 vi.mock('@/components/projects/projects-grid', () => ({
-  ProjectsGrid: ({
-    projects,
-    tags,
-  }: {
-    projects: Array<{ title: string }>;
-    tags: string[];
-  }) => <div data-testid="projects-grid">{`${projects.length}:${tags.length}`}</div>,
+  ProjectsGrid: ({ projects, tags }: { projects: Array<{ title: string }>; tags: string[] }) => (
+    <div data-testid="projects-grid">{`${projects.length}:${tags.length}`}</div>
+  ),
 }));
 
 const projects = [

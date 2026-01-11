@@ -35,8 +35,8 @@ npm run dev
 | `npm run build`  | Next.js ビルド                                              |
 | `npm run export` | ビルド + 静的書き出し (`out/`)                              |
 | `npm run start`  | `out/` をローカル配信 (`serve`)                             |
-| `npm run lint`   | ESLint 実行                                                 |
-| `npm run format` | Prettier で整形                                             |
+| `npm run lint`   | Biome で lint                                               |
+| `npm run format` | Biome で整形                                                |
 | `npm run test`   | Vitest 実行                                                 |
 | `npm run og`     | OG 画像生成 (`public/images/og-default.png`, `public/og/*`) |
 
