@@ -25,18 +25,13 @@ vi.mock('next/link', () => ({
     href: unknown;
     children: React.ReactNode;
     prefetch?: boolean;
-  }) =>
-    React.createElement('a', { href: resolveHref(href), ...props }, children),
+  }) => React.createElement('a', { href: resolveHref(href), ...props }, children),
 }));
 
 vi.mock('next/script', () => ({
   __esModule: true,
-  default: ({
-    children,
-    ...props
-  }: {
-    children?: React.ReactNode;
-  }) => React.createElement('script', props, children),
+  default: ({ children, ...props }: { children?: React.ReactNode }) =>
+    React.createElement('script', props, children),
 }));
 
 vi.mock('next/image', () => ({

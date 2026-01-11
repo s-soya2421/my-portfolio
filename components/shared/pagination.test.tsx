@@ -13,17 +13,13 @@ describe('Pagination', () => {
   };
 
   it('returns null when there is only one page', () => {
-    const { container } = render(
-      <Pagination basePath="/blog" currentPage={1} totalPages={1} />
-    );
+    const { container } = render(<Pagination basePath="/blog" currentPage={1} totalPages={1} />);
 
     expect(container.firstChild).toBeNull();
   });
 
   it('renders page links with the current page marked', () => {
-    render(
-      <Pagination basePath="/blog" currentPage={2} totalPages={3} labels={labels} />
-    );
+    render(<Pagination basePath="/blog" currentPage={2} totalPages={3} labels={labels} />);
 
     expect(screen.getByRole('navigation', { name: 'Pagination' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Page 1' })).toHaveAttribute('href', '/blog');
@@ -34,9 +30,7 @@ describe('Pagination', () => {
   });
 
   it('disables previous/next controls at the ends', () => {
-    render(
-      <Pagination basePath="/blog" currentPage={1} totalPages={2} labels={labels} />
-    );
+    render(<Pagination basePath="/blog" currentPage={1} totalPages={2} labels={labels} />);
 
     expect(screen.getByLabelText('Previous page')).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByLabelText('Next page')).toHaveAttribute('href', '/blog/page/2');
