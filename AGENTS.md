@@ -14,7 +14,7 @@ Install dependencies with `npm install` after cloning. Run `npm run dev` for the
 
 ### Coding Style & Naming Conventions
 
-Prefer TypeScript or typed JavaScript in `src/` and keep components small and focused. Use two-space indentation, single quotes, and trailing commas where valid -- configure Prettier and ESLint to enforce this (`npm run lint`). Components and hooks use PascalCase (`HeroBanner.tsx`) and camelCase for functions and variables. Use Tailwind CSS for styling; component-specific styles should be applied via Tailwind utility classes. Keep imports sorted: third-party first, followed by absolute aliases, then relative paths.
+Prefer TypeScript or typed JavaScript in `src/` and keep components small and focused. Use two-space indentation, single quotes, and trailing commas where valid -- configure Biome to enforce this (`npm run lint`). Components and hooks use PascalCase (`HeroBanner.tsx`) and camelCase for functions and variables. Use Tailwind CSS for styling; component-specific styles should be applied via Tailwind utility classes. Keep imports sorted: third-party first, followed by absolute aliases, then relative paths.
 
 ### Testing Guidelines
 
