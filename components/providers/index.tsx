@@ -1,8 +1,8 @@
 'use client';
 
-import { ThemeProvider } from './theme-provider';
-import { I18nProvider } from './i18n-provider';
 import { GoogleAnalytics } from '@/components/analytics/google-analytics';
+import { I18nProvider } from './i18n-provider';
+import { ThemeProvider } from './theme-provider';
 
 export const Providers = ({ children }: { children: React.ReactNode }) => {
   return (

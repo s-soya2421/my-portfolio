@@ -1,7 +1,7 @@
-import Script from 'next/script';
 import { notFound } from 'next/navigation';
-import { SectionHeader } from '@/components/sections/section-header';
+import Script from 'next/script';
 import { PostCard } from '@/components/cards/post-card';
+import { SectionHeader } from '@/components/sections/section-header';
 import { Pagination } from '@/components/shared/pagination';
 import {
   buildBreadcrumbJsonLd,

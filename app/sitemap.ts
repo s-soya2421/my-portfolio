@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
+import { type BlogFrontmatter, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { siteConfig } from '@/lib/site';
-import { loadCollection, type ProjectFrontmatter, type BlogFrontmatter } from '@/lib/content';
 
 export const dynamic = 'force-static';
 

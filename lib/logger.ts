@@ -71,7 +71,7 @@ const formatError = (
   error: unknown,
   trace: string | undefined,
   stackOverride: string | undefined,
-  config: LogConfig,
+  config: LogConfig
 ): Record<string, string> | undefined => {
   if (!error && !trace && !stackOverride) {
     return undefined;
@@ -118,7 +118,11 @@ const formatError = (
   return formatted;
 };
 
-const buildLogEntry = (level: LogLevel, message: string, meta?: LogMeta): Record<string, unknown> => {
+const buildLogEntry = (
+  level: LogLevel,
+  message: string,
+  meta?: LogMeta
+): Record<string, unknown> => {
   const config = getLogConfig();
   const { error, trace, stack, ...rest } = meta ?? {};
   const entry: Record<string, unknown> = {

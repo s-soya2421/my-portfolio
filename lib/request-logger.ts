@@ -5,7 +5,7 @@ import { generateRequestId, getRequestIdFromHeaders, REQUEST_ID_HEADER } from '.
 
 type RequestHandler<Context = unknown> = (
   request: NextRequest,
-  context: Context,
+  context: Context
 ) => Response | Promise<Response>;
 
 type RequestLogOptions = {
@@ -13,7 +13,14 @@ type RequestLogOptions = {
 };
 
 const DEFAULT_BODY_MAX_LEN = 2000;
-const REDACT_KEYS = new Set(['authorization', 'cookie', 'password', 'token', 'secret', 'set-cookie']);
+const REDACT_KEYS = new Set([
+  'authorization',
+  'cookie',
+  'password',
+  'token',
+  'secret',
+  'set-cookie',
+]);
 
 const getEnv = (key: string): string | undefined => {
   if (typeof process === 'undefined') {
@@ -53,7 +60,7 @@ const redactObject = (value: unknown): unknown => {
         return [key, '[REDACTED]'];
       }
       return [key, redactObject(nestedValue)];
-    }),
+    })
   );
 };
 
