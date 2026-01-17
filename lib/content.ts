@@ -1,16 +1,16 @@
 import fs from 'fs/promises';
-import path from 'path';
 import matter from 'gray-matter';
 import { compileMDX } from 'next-mdx-remote/rsc';
-import remarkGfm from 'remark-gfm';
-import rehypeSlug from 'rehype-slug';
-import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import { cache } from 'react';
-import { mdxComponents } from '@/components/mdx/mdx-components';
+import path from 'path';
 import type { ReactElement } from 'react';
-import { articleJsonLd } from './seo';
+import { cache } from 'react';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import rehypeSlug from 'rehype-slug';
+import remarkGfm from 'remark-gfm';
+import { mdxComponents } from '@/components/mdx/mdx-components';
 import { logger } from './logger';
-import { siteConfig, type SiteLocale } from './site';
+import { articleJsonLd } from './seo';
+import { type SiteLocale, siteConfig } from './site';
 
 const CONTENT_ROOT = path.join(process.cwd(), 'content');
 

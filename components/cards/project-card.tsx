@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
-import type { ProjectFrontmatter } from '@/lib/content';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useI18n } from '@/components/providers/i18n-provider';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -13,7 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useI18n } from '@/components/providers/i18n-provider';
+import type { ProjectFrontmatter } from '@/lib/content';
 import { buildLocalePath } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 

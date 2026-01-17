@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { Button } from '@/components/ui/button';
 import { buildLocalePath } from '@/lib/locale';
 import { siteConfig } from '@/lib/site';
 

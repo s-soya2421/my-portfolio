@@ -1,13 +1,13 @@
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft } from 'lucide-react';
-import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
-import { getBlogPostBySlug, loadCollection, type BlogFrontmatter } from '@/lib/content';
-import { logger } from '@/lib/logger';
-import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { type BlogFrontmatter, getBlogPostBySlug, loadCollection } from '@/lib/content';
+import { logger } from '@/lib/logger';
+import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
+import { formatDate } from '@/lib/utils';
 
 type BlogPageProps = {
   params: Promise<{ slug: string }>;
