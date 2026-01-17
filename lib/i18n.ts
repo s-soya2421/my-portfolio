@@ -1,4 +1,4 @@
-import { siteConfig, type SiteLocale } from './site';
+import { type SiteLocale, siteConfig } from './site';
 
 type SectionCopy = {
   navigation: {
