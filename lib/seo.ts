@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { siteConfig, type SiteLocale } from './site';
+import { type SiteLocale, siteConfig } from './site';
 
 const ogLocaleMap: Record<SiteLocale, string> = {
   ja: 'ja_JP',

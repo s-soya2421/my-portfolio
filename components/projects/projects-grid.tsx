@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { ProjectFrontmatter } from '@/lib/content';
+import { useMemo, useState } from 'react';
 import { ProjectCard } from '@/components/cards/project-card';
-import { Button } from '@/components/ui/button';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { Button } from '@/components/ui/button';
+import type { ProjectFrontmatter } from '@/lib/content';
 
 export const ProjectsGrid = ({
   projects,

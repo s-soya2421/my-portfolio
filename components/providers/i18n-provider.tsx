@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { FALLBACK_LOCALE, getDictionary, type Dictionary } from '@/lib/i18n';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { type Dictionary, FALLBACK_LOCALE, getDictionary } from '@/lib/i18n';
 import { getLocaleFromPath } from '@/lib/locale';
 import type { SiteLocale } from '@/lib/site';
 

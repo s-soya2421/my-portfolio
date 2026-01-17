@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import type { BlogFrontmatter } from '@/lib/content';
 import { PostCard } from '@/components/cards/post-card';
+import { useI18n } from '@/components/providers/i18n-provider';
 import { SectionHeader } from '@/components/sections/section-header';
 import { Button } from '@/components/ui/button';
-import { useI18n } from '@/components/providers/i18n-provider';
+import type { BlogFrontmatter } from '@/lib/content';
 import { buildLocalePath } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 

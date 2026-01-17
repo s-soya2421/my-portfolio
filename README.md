@@ -37,6 +37,7 @@ npm run dev
 | `npm run start`  | `out/` をローカル配信 (`serve`)                             |
 | `npm run lint`   | Biome で lint                                               |
 | `npm run format` | Biome で整形                                                |
+| `npm run format:check` | Biome で整形チェック                                   |
 | `npm run test`   | Vitest 実行                                                 |
 | `npm run og`     | OG 画像生成 (`public/images/og-default.png`, `public/og/*`) |
 

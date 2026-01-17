@@ -1,13 +1,13 @@
 import Script from 'next/script';
-import { SectionHeader } from '@/components/sections/section-header';
 import { ProjectsGrid } from '@/components/projects/projects-grid';
+import { SectionHeader } from '@/components/sections/section-header';
+import { getAllTags, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
   webPageJsonLd,
 } from '@/lib/seo';
-import { getAllTags, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 
 export const metadata = buildMetadata({
   title: 'Projects',

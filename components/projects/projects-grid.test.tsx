@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ProjectsGrid } from './projects-grid';
 import { getDictionary } from '@/lib/i18n';
+import { ProjectsGrid } from './projects-grid';
 
 const dictionary = getDictionary('en');
 

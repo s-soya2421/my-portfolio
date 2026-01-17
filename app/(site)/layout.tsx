@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
-import { SiteHeader } from '@/components/layout/site-header';
-import { SiteFooter } from '@/components/layout/site-footer';
 import { PageTransition } from '@/components/layout/page-transition';
+import { SiteFooter } from '@/components/layout/site-footer';
+import { SiteHeader } from '@/components/layout/site-header';
 
 export default function SiteLayout({ children }: { children: ReactNode }) {
   return (
