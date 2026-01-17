@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next';
-import { Noto_Sans_JP, JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono, Noto_Sans_JP } from 'next/font/google';
 import '@/styles/globals.css';
-import { Providers } from '@/components/providers';
-import { baseMetadata, websiteJsonLd, personJsonLd } from '@/lib/seo';
-import { siteConfig } from '@/lib/site';
-import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import Script from 'next/script';
+import { Providers } from '@/components/providers';
+import { baseMetadata, personJsonLd, websiteJsonLd } from '@/lib/seo';
+import { siteConfig } from '@/lib/site';
 
 const sans = Noto_Sans_JP({
   subsets: ['latin'],

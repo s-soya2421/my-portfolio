@@ -1,9 +1,9 @@
+import { Resvg } from '@resvg/resvg-js';
 import fs from 'fs/promises';
 import path from 'path';
-import { Resvg } from '@resvg/resvg-js';
-import { siteConfig } from '@/lib/site';
-import { loadCollection, type ProjectFrontmatter, type BlogFrontmatter } from '@/lib/content';
+import { type BlogFrontmatter, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { logger } from '@/lib/logger';
+import { siteConfig } from '@/lib/site';
 
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'og');
 const DEFAULT_OUTPUT = path.join(process.cwd(), 'public', 'images', 'og-default.png');

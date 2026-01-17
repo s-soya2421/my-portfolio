@@ -1,11 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import type { BlogFrontmatter } from '@/lib/content';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import type { BlogFrontmatter } from '@/lib/content';
 import { buildLocalePath } from '@/lib/locale';
 import { formatDate } from '@/lib/utils';
 

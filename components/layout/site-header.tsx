@@ -1,15 +1,15 @@
 'use client';
 
+import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
-import { navigationItems } from '@/lib/navigation';
 import { useI18n } from '@/components/providers/i18n-provider';
-import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { LanguageSwitcher } from '@/components/shared/language-switcher';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { Button } from '@/components/ui/button';
 import { buildLocalePath, stripLocaleFromPath } from '@/lib/locale';
+import { navigationItems } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 export const SiteHeader = () => {

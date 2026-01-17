@@ -1,17 +1,17 @@
 import Script from 'next/script';
-import { Hero } from '@/components/sections/hero';
-import { ProjectsPreview } from '@/components/sections/projects-preview';
 import { BlogPreview } from '@/components/sections/blog-preview';
 import { ChallengesSection } from '@/components/sections/challenges';
-import { loadCollection, type ProjectFrontmatter, type BlogFrontmatter } from '@/lib/content';
+import { Hero } from '@/components/sections/hero';
+import { ProjectsPreview } from '@/components/sections/projects-preview';
+import { type BlogFrontmatter, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { challengesEn } from '@/lib/data';
-import { siteConfig } from '@/lib/site';
 import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
   webPageJsonLd,
 } from '@/lib/seo';
+import { siteConfig } from '@/lib/site';
 
 const EN_SITE_DESCRIPTION =
   'Portfolio of Soya. Full-stack development and DevOps with a focus on UX and performance.';

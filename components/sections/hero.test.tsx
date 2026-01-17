@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Hero } from './hero';
 import { getDictionary } from '@/lib/i18n';
+import { Hero } from './hero';
 
 let currentLocale: 'ja' | 'en' = 'ja';
 let currentDictionary = getDictionary('en');
