@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { logger } from './lib/logger';
 import { getRequestContext } from './lib/request-context';
 import { generateRequestId, getRequestIdFromHeaders, REQUEST_ID_HEADER } from './lib/request-id';

@@ -1,8 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { SectionHeader } from '@/components/sections/section-header';
 import { useI18n } from '@/components/providers/i18n-provider';
+import { SectionHeader } from '@/components/sections/section-header';
 
 export type ChallengeItem = {
   title: string;
