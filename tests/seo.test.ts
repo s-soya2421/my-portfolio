@@ -59,10 +59,13 @@ describe('SEO helpers', () => {
     });
     expect(jsonLd.image).toBe(`${siteConfig.url}/images/article.png`);
     expect(jsonLd.inLanguage).toBe(siteConfig.defaultLocale);
-    expect(Array.isArray(jsonLd.author)).toBe(true);
-    expect(jsonLd.author[0]).toMatchObject({
-      '@id': `${siteConfig.url}#person`,
-    });
+    const author = (jsonLd as { author?: unknown }).author;
+    expect(Array.isArray(author)).toBe(true);
+    if (Array.isArray(author)) {
+      expect(author[0]).toMatchObject({
+        '@id': `${siteConfig.url}#person`,
+      });
+    }
   });
 
   it('maps breadcrumb items with positional indices', () => {
