@@ -1,12 +1,12 @@
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
-import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
-import { getProjectBySlug, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { Button } from '@/components/ui/button';
+import { getProjectBySlug, loadCollection, type ProjectFrontmatter } from '@/lib/content';
 import { logger } from '@/lib/logger';
+import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
 
 type ProjectPageProps = {
   params: Promise<{ slug: string }>;

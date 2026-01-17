@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { loadCollection, type BlogFrontmatter } from '@/lib/content';
+import { type BlogFrontmatter, loadCollection } from '@/lib/content';
 import { BLOG_POSTS_PER_PAGE, BLOG_SLUG } from './constants';
 
 export type BlogListItem = BlogFrontmatter & { slug: string };

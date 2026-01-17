@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeToggle } from './theme-toggle';
 
 let currentTheme: 'light' | 'dark' = 'light';
