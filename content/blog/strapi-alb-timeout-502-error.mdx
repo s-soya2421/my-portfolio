@@ -1,0 +1,105 @@
+---
+title: 'Strapi のタイムアウト設定不備で ALB から 502 エラーが出た話'
+description: 'Strapi のバージョンアップ後、ALB から 502 エラーが頻発。原因は ALB と Strapi (Node.js) のタイムアウト値の不整合でした。server.requestTimeout や bootstrap でのタイムアウト調整で解決した手順をまとめます。'
+date: '2026-01-22'
+updated: '2026-01-22'
+tags: ['AWS', 'ALB', 'Strapi', 'Node.js', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- CloudFront - ALB - ECS (Strapi) 構成で、Strapi のバージョンアップ後に 502 (Bad Gateway) エラーが頻発した。
+- 原因は、ALB のアイドルタイムアウト値 (例: 60秒) よりも、バックエンドである Strapi (Node.js) のサーバータイムアウト値が短かったため、ALB がリクエストを処理中に Strapi 側が一方的にコネクションを切断していたこと。
+- Strapi の `config/server.js` や `src/index.js` の `bootstrap` 関数で `requestTimeout` や `keepAliveTimeout` を ALB の設定値より長くすることで解消した。
+
+## 背景
+
+- **インフラ構成:** CloudFront → (FE Server) → ALB → ECS Fargate (BE) → DB
+- **バックエンド:** ヘッドレス CMS の `Strapi` を利用。
+- **事象:** Strapi のバージョンアップ作業後、特定の API で 502 エラーが断続的に発生するようになった。
+
+バージョンアップ前は問題なく動作していたため、当初はコードのバグを疑った。しかし、アプリケーションログには特にエラーが記録されておらず、問題の切り分けが必要な状況だった。
+
+## 原因分析
+
+まず、AWS のコンソールから関連するメトリクスを確認。
+
+- `CloudWatch` のメトリクスを見ると、ALB の `HTTPCode_Target_5XX_Count` が増加しており、ターゲット（この場合は Strapi が動作する ECS タスク）からの 5xx 応答が原因であることがわかった。
+- ALB のアクセスログを調べると、`502` (Bad Gateway) が記録されており、これは ALB がターゲットから有効な応答を受け取れなかったことを意味する。
+
+これらの状況から、ALB とバックエンドサーバーである Strapi との通信に問題があると推測。特に、Node.js アプリケーションと ALB を組み合わせる際によく問題となる「タイムアウト値の不整合」を疑った。
+
+- **ALB のアイドルタイムアウト:** 60秒（デフォルト）
+- **Strapi (Node.js) のタイムアウト:** Strapi v4 が利用する Koa.js は、Node.js の `http.Server` に依存しており、その `requestTimeout` や `keepAliveTimeout` のデフォルト値は ALB の設定よりも短い場合がある。
+
+ALB が 60 秒間応答を待っている間に、Strapi サーバーが先にタイムアウトしてコネクションを切断してしまい、結果として ALB が `502` を返していた、という仮説に至った。
+
+## 解決策
+
+Strapi のサーバー設定を変更し、ALB のアイドルタイムアウトよりも長い時間コネクションを維持するようにした。アプローチは2つある。
+
+### 1. `config/server.js` で静的に設定する
+
+Strapi プロジェクトの `config/server.js` （もしくは `config/env/production/server.js`）に、サーバーのタイムアウト設定を追記する。
+
+```javascript:config/server.js
+module.exports = ({ env }) => ({
+  host: env('HOST', '0.0.0.0'),
+  port: env.int('PORT', 1337),
+  app: {
+    keys: env.array('APP_KEYS'),
+  },
+  // サーバーのタイムアウト設定を追記
+  server: {
+    // ALB のアイドルタイムアウト (例: 60秒) より長く設定
+    requestTimeout: 65 * 1000, 
+  },
+});
+```
+この方法で、リクエスト全体のタイムアウトを調整できる。
+
+### 2. `bootstrap` 関数で動的に設定する
+
+より詳細なタイムアウト（`keepAliveTimeout` や `headersTimeout`）を調整したい場合や、環境に応じて動的に値を変更したい場合は、`src/index.js` の `bootstrap` 関数を利用する。この関数は Strapi の起動時に一度だけ実行される。
+
+```javascript:src/index.js
+'use strict';
+
+module.exports = {
+  // ...
+  
+  /**
+   * An asynchronous bootstrap function that runs before
+   * your application gets started.
+   */
+  bootstrap({ strapi }) {
+    // ALBのアイドルタイムアウトより長く設定
+    const albIdleTimeout = 60 * 1000; // ALBのタイムアウト値 (例: 60秒)
+    
+    // httpサーバーインスタンスに直接タイムアウト値を設定
+    if (strapi.server && strapi.server.httpServer) {
+        strapi.server.httpServer.keepAliveTimeout = albIdleTimeout + 5 * 1000; // 例: 65秒
+        strapi.server.httpServer.headersTimeout = albIdleTimeout + 10 * 1000; // 例: 70秒
+    }
+  },
+};
+```
+
+**ポイント:**
+- `keepAliveTimeout`: Keep-Alive が有効な場合のタイムアウト。
+- `headersTimeout`: リクエストヘッダーの受信を待つタイムアウト。`keepAliveTimeout` より少し長めに設定するのが一般的だ。
+
+今回は `config/server.js` と `bootstrap` の両方を組み合わせることで、問題を解消した。この設定をデプロイしたところ、ALB からの 502 エラーは完全に解消された。
+
+## 今後の課題と考察
+
+今回の対応で 502 エラーは解消されたものの、これはあくまで対症療法だ。そもそも、なぜ一部の API 応答にこれほど長い時間がかかっていたのか、という根本原因は解決していない。
+
+考えられる原因としては、
+- **データベースのボトルネック:** 特定のクエリが低速になっている、インデックスが不足しているなど。
+- **Strapi が生成するクエリが重い:** 複雑なリレーションを持つコンテンツを取得する際に、非効率なクエリが発行されている可能性。
+
+などがある。
+
+今後は New Relic や DataDog といった APM (Application Performance Monitoring) ツールを導入して、トランザクションレベルでのパフォーマンスを可視化し、ボトルネックとなっている処理を特定・改善していく予定だ。
