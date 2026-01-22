@@ -1,6 +1,6 @@
 ---
-title: 'Strapi のタイムアウト設定不備で ALB から 502 エラーが出た話'
-description: 'Strapi のバージョンアップ後、ALB から 502 エラーが頻発。原因は ALB と Strapi (Node.js) のタイムアウト値の不整合でした。server.requestTimeout や bootstrap でのタイムアウト調整で解決した手順をまとめます。'
+title: 'Strapi + ALB構成における502エラーの真因とタイムアウト設定のベストプラクティス'
+description: 'StrapiとALB環境で頻発する502エラー。その原因はrequestTimeoutではなく、ALBの接続再利用とNode.jsの短いkeepAliveTimeoutの不整合でした。根本原因の解説と、推奨される設定方法をまとめます。'
 date: '2026-01-22'
 updated: '2026-01-22'
 tags: ['AWS', 'ALB', 'Strapi', 'Node.js', 'Troubleshooting']
@@ -9,39 +9,67 @@ draft: false
 
 ## TL;DR
 
-- CloudFront - ALB - ECS (Strapi) 構成で、Strapi のバージョンアップ後に 502 (Bad Gateway) エラーが頻発した。
-- 原因は、ALB のアイドルタイムアウト値 (例: 60秒) よりも、バックエンドである Strapi (Node.js) のサーバータイムアウト値が短かったため、ALB がリクエストを処理中に Strapi 側が一方的にコネクションを切断していたこと。
-- Strapi の `config/server.js` や `src/index.js` の `bootstrap` 関数で `requestTimeout` や `keepAliveTimeout` を ALB の設定値より長くすることで解消した。
+- Strapi + ALB構成で断続的に発生する502エラーの主な原因は、**ALBの接続再利用**と、**Node.jsの`keepAliveTimeout`（デフォルト5秒）の不整合**。
+- ALBがアイドル状態のコネクションを再利用しようとした際、Node.js側が先に接続を切ってしまっているために`502 Bad Gateway`が発生する。
+- 解決策は、`bootstrap`関数で`keepAliveTimeout`をALBのアイドルタイムアウトより長く設定すること。これが最も直接的で効果的な対策となる。
 
-## 背景
+## よくある誤解と問題の背景
 
-- **インフラ構成:** CloudFront → (FE Server) → ALB → ECS Fargate (BE) → DB
-- **バックエンド:** ヘッドレス CMS の `Strapi` を利用。
-- **事象:** Strapi のバージョンアップ作業後、特定の API で 502 エラーが断続的に発生するようになった。
+- **インフラ構成:** ALB → ECS Fargate (Strapi/Node.js)
+- **事象:** アプリケーションログにエラーはないが、ALBのメトリクスで502エラーが多発。
 
-バージョンアップ前は問題なく動作していたため、当初はコードのバグを疑った。しかし、アプリケーションログには特にエラーが記録されておらず、問題の切り分けが必要な状況だった。
+この問題に直面した際、「サーバーの`requestTimeout`がALBのアイドルタイムアウトより短いからだ」と考えがちですが、これは必ずしも正しくありません。Node.jsの`requestTimeout`はデフォルトで5分と長く、多くの場合、真犯人は別にいます。
 
-## 原因分析
+## 原因の厳密な解説
 
-まず、AWS のコンソールから関連するメトリクスを確認。
+ALBとNode.jsサーバー間のタイムアウト設定の不整合、特に**Keep-Alive**の扱いに問題の核心があります。
 
-- `CloudWatch` のメトリクスを見ると、ALB の `HTTPCode_Target_5XX_Count` が増加しており、ターゲット（この場合は Strapi が動作する ECS タスク）からの 5xx 応答が原因であることがわかった。
-- ALB のアクセスログを調べると、`502` (Bad Gateway) が記録されており、これは ALB がターゲットから有効な応答を受け取れなかったことを意味する。
+- **ALBの挙動:** アイドルタイムアウト（デフォルト60秒）内であれば、パフォーマンス向上のために確立済みのTCPコネクションを再利用しようとします。
+- **Node.jsの挙動:** `keepAliveTimeout`のデフォルト値は**5秒**です。リクエスト完了後、次のリクエストが来ないままこの時間を超えると、Node.jsサーバーは一方的にコネクションを閉じます。
 
-これらの状況から、ALB とバックエンドサーバーである Strapi との通信に問題があると推測。特に、Node.js アプリケーションと ALB を組み合わせる際によく問題となる「タイムアウト値の不整合」を疑った。
+この仕様の差が、以下の順で502エラーを引き起こします。
 
-- **ALB のアイドルタイムアウト:** 60秒（デフォルト）
-- **Strapi (Node.js) のタイムアウト:** Strapi v4 が利用する Koa.js は、Node.js の `http.Server` に依存しており、その `requestTimeout` や `keepAliveTimeout` のデフォルト値は ALB の設定よりも短い場合がある。
+1.  ALBがクライアントリクエストを受け、Strapiへ転送。処理は正常に完了します。
+2.  ALBは効率化のため、そのコネクションをプールし、次のリクエストに備えます（アイドルタイムアウト60秒以内）。
+3.  しかし、Strapi(Node.js)側では`keepAliveTimeout`の**5秒**が経過したため、そのコネクションを閉じてしまいます (`FIN`パケットを送信)。
+4.  ALBは、既に閉じられたとは知らずに、そのコネクションを再利用して次のリクエストを送信。
+5.  ターゲットから応答がないため、ALBは`502 Bad Gateway`エラーをクライアントに返します。
 
-ALB が 60 秒間応答を待っている間に、Strapi サーバーが先にタイムアウトしてコネクションを切断してしまい、結果として ALB が `502` を返していた、という仮説に至った。
+これが、断続的に502エラーが発生するメカニズムです。
 
 ## 解決策
 
-Strapi のサーバー設定を変更し、ALB のアイドルタイムアウトよりも長い時間コネクションを維持するようにした。アプローチは2つある。
+意図しないコネクション切断を防ぐため、Strapi(Node.js)側のタイムアウト値をALBより長く設定します。
 
-### 1. `config/server.js` で静的に設定する
+### 1. `bootstrap`関数で`keepAliveTimeout`を調整する (最も推奨)
 
-Strapi プロジェクトの `config/server.js` （もしくは `config/env/production/server.js`）に、サーバーのタイムアウト設定を追記する。
+問題の直接的な原因である`keepAliveTimeout`を調整するのがベストプラクティスです。Strapiの`src/index.js`にある`bootstrap`関数で、サーバーインスタンスに直接設定します。
+
+```javascript:src/index.js
+'use strict';
+
+module.exports = {
+  // ...
+  bootstrap({ strapi }) {
+    // 注意: Strapiのバージョンや起動タイミングによっては、bootstrap時点で
+    // strapi.serverオブジェクトが存在しない場合があります。
+    // if文による存在チェックを強く推奨します。
+    if (strapi.server && strapi.server.httpServer) {
+        const albIdleTimeout = 60 * 1000; // ご自身のALBのアイドルタイムアウト値に合わせる
+        
+        // ALBのタイムアウトより少し長く設定
+        strapi.server.httpServer.keepAliveTimeout = albIdleTimeout + 5 * 1000; // 例: 65秒
+        strapi.server.httpServer.headersTimeout = albIdleTimeout + 10 * 1000; // 例: 70秒
+    }
+  },
+};
+```
+
+### 2. (補助的) `config/server.js`で`requestTimeout`を設定する
+
+もしDBの重いクエリなど、リクエスト処理自体に時間がかかるケースも考慮するなら、`requestTimeout`も合わせて設定しておくとより堅牢です。
+
+**注意:** Strapi公式ドキュメントが推奨する正しい記法で設定してください。
 
 ```javascript:config/server.js
 module.exports = ({ env }) => ({
@@ -50,56 +78,20 @@ module.exports = ({ env }) => ({
   app: {
     keys: env.array('APP_KEYS'),
   },
-  // サーバーのタイムアウト設定を追記
-  server: {
-    // ALB のアイドルタイムアウト (例: 60秒) より長く設定
-    requestTimeout: 65 * 1000, 
+
+  http: {
+    serverOptions: {
+      // ALBのアイドルタイムアウトより長く設定
+      requestTimeout: 65 * 1000,
+    },
   },
 });
 ```
-この方法で、リクエスト全体のタイムアウトを調整できる。
 
-### 2. `bootstrap` 関数で動的に設定する
+この設定をデプロイ後、502エラーは完全に解消されました。
 
-より詳細なタイムアウト（`keepAliveTimeout` や `headersTimeout`）を調整したい場合や、環境に応じて動的に値を変更したい場合は、`src/index.js` の `bootstrap` 関数を利用する。この関数は Strapi の起動時に一度だけ実行される。
+## まとめと次のステップ
 
-```javascript:src/index.js
-'use strict';
+ALB + Node.js環境での502エラーは、多くの場合`keepAliveTimeout`の不整合が原因です。`requestTimeout`を闇雲に伸ばすのではなく、まずは`keepAliveTimeout`をALBの設定に合わせて調整しましょう。
 
-module.exports = {
-  // ...
-  
-  /**
-   * An asynchronous bootstrap function that runs before
-   * your application gets started.
-   */
-  bootstrap({ strapi }) {
-    // ALBのアイドルタイムアウトより長く設定
-    const albIdleTimeout = 60 * 1000; // ALBのタイムアウト値 (例: 60秒)
-    
-    // httpサーバーインスタンスに直接タイムアウト値を設定
-    if (strapi.server && strapi.server.httpServer) {
-        strapi.server.httpServer.keepAliveTimeout = albIdleTimeout + 5 * 1000; // 例: 65秒
-        strapi.server.httpServer.headersTimeout = albIdleTimeout + 10 * 1000; // 例: 70秒
-    }
-  },
-};
-```
-
-**ポイント:**
-- `keepAliveTimeout`: Keep-Alive が有効な場合のタイムアウト。
-- `headersTimeout`: リクエストヘッダーの受信を待つタイムアウト。`keepAliveTimeout` より少し長めに設定するのが一般的だ。
-
-今回は `config/server.js` と `bootstrap` の両方を組み合わせることで、問題を解消した。この設定をデプロイしたところ、ALB からの 502 エラーは完全に解消された。
-
-## 今後の課題と考察
-
-今回の対応で 502 エラーは解消されたものの、これはあくまで対症療法だ。そもそも、なぜ一部の API 応答にこれほど長い時間がかかっていたのか、という根本原因は解決していない。
-
-考えられる原因としては、
-- **データベースのボトルネック:** 特定のクエリが低速になっている、インデックスが不足しているなど。
-- **Strapi が生成するクエリが重い:** 複雑なリレーションを持つコンテンツを取得する際に、非効率なクエリが発行されている可能性。
-
-などがある。
-
-今後は New Relic や DataDog といった APM (Application Performance Monitoring) ツールを導入して、トランザクションレベルでのパフォーマンスを可視化し、ボトルネックとなっている処理を特定・改善していく予定だ。
+今回の対応はインフラレイヤーでの設定見直しであり、もしAPIの応答自体が遅い場合は、別途パフォーマンス改善が必要です。APMツールなどでボトルネックを特定し、クエリ改善やインデックスの見直しといった次のアクションに進むことをお勧めします。
