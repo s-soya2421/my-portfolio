@@ -2,7 +2,7 @@
 
 This document combines the high-level repository guidelines and the agent-specific operating guide that used to live in `docs/agent-readme.md`.
 
-> **Note**: This file is kept in sync with `CLAUDE.md`. Changes should be applied to both files.
+> **Note**: This file is kept in sync with `AGENTS.md`. Changes should be applied to both files.
 
 ## Repository Guidelines
 
