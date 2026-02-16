@@ -1,0 +1,116 @@
+---
+title: 'Nuxt メジャーバージョンアップで 502 が再発した話 ― sed パッチが効かなくなる罠'
+description: 'Nuxt のメジャーバージョンアップ後に ALB 502 が再発。原因はビルド成果物の構成変更で sed による keepAliveTimeout パッチが当たらなくなっていたこと。修正と今後の再発防止策をまとめます。'
+date: '2026-02-16'
+updated: '2026-02-16'
+tags: ['Nuxt', 'AWS', 'ALB', 'Troubleshooting']
+draft: true
+---
+
+## TL;DR
+
+- Nuxt のメジャーバージョンアップ後、以前解消済みだった ALB 502 エラーが再発。
+- 原因は `.output/` 配下のファイル構成が変わり、CI/CD で仕込んでいた `sed` による `keepAliveTimeout` / `headersTimeout` の書き換えが効かなくなっていたこと。
+- `sed` のパスとパターンを新しい構成に合わせて修正し、502 は再び解消。
+- 今後はビルド成果物の構成変更に気づけるよう、起動時に `server` オブジェクトの該当プロパティを検証する仕組みを導入予定。
+
+## 前回までのあらすじ
+
+以前の記事で、ALB の `Idle timeout = 60s` に対して Nuxt (Nitro) が生成する Node サーバーの `keepAliveTimeout` がデフォルト 5s で短すぎるため、ALB がコネクションを再利用しようとしたタイミングで Node 側が先に切断 → 502 が出る、という問題をまとめた。
+
+対策として、CI/CD のビルドステップでビルド成果物に `sed` を当て、`server.listen` の直前に `keepAliveTimeout` / `headersTimeout` を挿し込む方法で運用していた。
+
+```bash
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/chunks/nitro/nitro.mjs
+```
+
+## 何が起きたか
+
+Nuxt のメジャーバージョンアップを実施してデプロイしたところ、ALB の 5XX メトリクスが上昇。CloudWatch で確認すると `502 Bad Gateway` が断続的に発生していた。
+
+アプリケーションログ自体にはエラーが出ておらず、ALB のメトリクス側だけで 502 が観測される ― 以前とまったく同じパターンだった。
+
+## 原因
+
+ビルド成果物を確認したところ、`.output/server/` 配下のディレクトリ構成が変わっていた。
+
+以前の構成:
+
+```
+.output/server/
+├── chunks/
+│   └── nitro/
+│       └── nitro.mjs    ← sed のターゲット
+└── index.mjs
+```
+
+バージョンアップ後の構成:
+
+```
+.output/server/
+├── chunks/
+│   └── nitro/
+│       └── nitro.mjs    ← server.listen の記述が消えている
+└── index.mjs            ← server.listen がここに移動
+```
+
+`sed` のパターンマッチ (`/server\.listen/`) がヒットしなくなり、`keepAliveTimeout` / `headersTimeout` の挿し込みがサイレントにスキップされていた。`sed` は対象行が見つからなくてもエラーにならないため、CI/CD は何事もなく成功していた。
+
+## 対応
+
+まず `find` で `server.listen` の現在位置を特定。
+
+```bash
+find .output/server -name '*.mjs' | xargs grep -n 'server\.listen'
+```
+
+ヒットしたファイルに対して `sed` のパスを更新し、パッチが当たるように修正した。
+
+加えて、パッチ適用後に対象の値が実際に書き込まれているかを検証するステップを CI に追加。
+
+```bash
+# パッチ適用
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/index.mjs
+
+# 検証: 書き換えが入っているか確認
+if ! grep -q 'keepAliveTimeout' .output/server/index.mjs; then
+  echo '[ERROR] keepAliveTimeout patch was not applied!' >&2
+  exit 1
+fi
+
+echo '[patch] applied keepAliveTimeout tweak'
+```
+
+これにより、仮にまた構成が変わってパッチが当たらなかった場合は CI が失敗するようになった。
+
+## 今後 ― 起動時のプロパティ検証
+
+`sed` によるビルド成果物への後付けパッチは、構成変更のたびに壊れるリスクがある。前回の記事でも注意点として触れていたが、結局メジャーバージョンアップで踏んでしまった。
+
+今後は、アプリケーション起動時に `server` オブジェクトの `keepAliveTimeout` と `headersTimeout` が期待値になっているかを検証するアプローチに切り替える予定。
+
+```javascript
+// 起動後に値を検証するイメージ
+const EXPECTED_KEEP_ALIVE = 62 * 1000;
+const EXPECTED_HEADERS_TIMEOUT = 65 * 1000;
+
+server.listen(port, () => {
+  if (server.keepAliveTimeout !== EXPECTED_KEEP_ALIVE) {
+    console.error(`[WARN] keepAliveTimeout is ${server.keepAliveTimeout}, expected ${EXPECTED_KEEP_ALIVE}`);
+  }
+  if (server.headersTimeout !== EXPECTED_HEADERS_TIMEOUT) {
+    console.error(`[WARN] headersTimeout is ${server.headersTimeout}, expected ${EXPECTED_HEADERS_TIMEOUT}`);
+  }
+});
+```
+
+こうしておけば、パッチが外れたときにログで即座に気づける。監視アラートと組み合わせれば、デプロイ直後に検知して対応できる。
+
+## まとめ
+
+- `sed` によるビルド成果物パッチは手軽だが、構成変更でサイレントに壊れるリスクがある。
+- CI に検証ステップを入れて「パッチが当たらなかったら失敗」にするだけでも検知は改善する。
+- 根本的には、起動時にランタイムで値を検証する仕組みを入れるのがより安全。
+- Nitro 側で `keepAliveTimeout` を設定できる公式オプションが来るまでは、こうした防御的なアプローチを続ける予定。
