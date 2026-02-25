@@ -107,6 +107,32 @@ describe('logger', () => {
     });
   });
 
+  describe('truncation', () => {
+    it('does not truncate short strings', () => {
+      vi.stubEnv('LOG_STACK_MAX_LEN', '200');
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const err = new Error('short');
+      err.stack = 'short stack';
+      logger.error('fail', { error: err });
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      expect(parsed.error.stack).toBe('short stack');
+    });
+
+    it('includes trace in log entry when trace meta is provided', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      logger.error('fail', { trace: 'trace-value-here' });
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      expect(parsed.error.trace).toBe('trace-value-here');
+    });
+
+    it('includes stack from plain object error', () => {
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      logger.error('fail', { error: { name: 'CustomErr', message: 'oops', stack: 'at foo:1:1' } });
+      const parsed = JSON.parse(spy.mock.calls[0][0] as string);
+      expect(parsed.error.stack).toBe('at foo:1:1');
+    });
+  });
+
   describe('error formatting', () => {
     it('formats Error instance', () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});

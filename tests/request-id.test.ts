@@ -35,3 +35,17 @@ describe('getRequestIdFromHeaders', () => {
     expect(getRequestIdFromHeaders(headers)).toBeNull();
   });
 });
+
+describe('generateRequestId (crypto fallback)', () => {
+  it('falls back to Math.random when crypto.getRandomValues is unavailable', () => {
+    const original = globalThis.crypto;
+    // @ts-expect-error intentionally removing crypto for fallback test
+    delete globalThis.crypto;
+    try {
+      const id = generateRequestId();
+      expect(id).toMatch(/^[0-9a-f]{32}$/);
+    } finally {
+      globalThis.crypto = original;
+    }
+  });
+});
