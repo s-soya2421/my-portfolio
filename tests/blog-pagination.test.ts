@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getTotalBlogPages, paginateBlogPosts } from '@/app/(site)/blog/utils';
+import { getBlogPagePath, getTotalBlogPages, paginateBlogPosts } from '@/app/(site)/blog/utils';
 import type { BlogFrontmatter } from '@/lib/content';
 
 type BlogListItem = BlogFrontmatter & { slug: string };
@@ -46,5 +46,16 @@ describe('paginateBlogPosts', () => {
     const { pagePosts, isValidPage } = paginateBlogPosts(posts, 3);
     expect(isValidPage).toBe(false);
     expect(pagePosts).toHaveLength(0);
+  });
+});
+
+describe('getBlogPagePath', () => {
+  it('returns BLOG_SLUG for page 1', () => {
+    expect(getBlogPagePath(1)).not.toContain('/page/');
+  });
+
+  it('returns paginated path for page 2 and above', () => {
+    expect(getBlogPagePath(2)).toContain('/page/2');
+    expect(getBlogPagePath(5)).toContain('/page/5');
   });
 });

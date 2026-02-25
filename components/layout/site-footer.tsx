@@ -17,7 +17,6 @@ export const SiteFooter = () => {
     <footer className="border-t border-border/60 bg-background">
       <div className="container flex flex-col gap-4 py-10 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">{dictionary.footer.madeIn}</p>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} {dictionary.footer.rights}
           </p>
