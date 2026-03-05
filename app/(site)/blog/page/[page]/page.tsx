@@ -1,15 +1,21 @@
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
-import { PostCard } from '@/components/cards/post-card';
+import { Suspense } from 'react';
+import { BlogPostList } from '@/components/blog/blog-post-list';
 import { SectionHeader } from '@/components/sections/section-header';
-import { Pagination } from '@/components/shared/pagination';
 import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
   webPageJsonLd,
 } from '@/lib/seo';
-import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from '../../constants';
+import {
+  BLOG_META_DESCRIPTION,
+  BLOG_POSTS_PER_PAGE,
+  BLOG_SECTION_COPY,
+  BLOG_SLUG,
+  BLOG_TITLE,
+} from '../../constants';
 import {
   getAllBlogPosts,
   getBlogPagePath,
@@ -68,7 +74,7 @@ export default async function BlogPaginationPage({ params }: BlogPageProps) {
   }
 
   const posts = await getAllBlogPosts();
-  const { pagePosts, totalPages, isValidPage } = paginateBlogPosts(posts, pageNumber);
+  const { pagePosts, isValidPage } = paginateBlogPosts(posts, pageNumber);
 
   if (!isValidPage) {
     notFound();
@@ -111,18 +117,14 @@ export default async function BlogPaginationPage({ params }: BlogPageProps) {
           title={BLOG_SECTION_COPY.title}
           description={BLOG_SECTION_COPY.description}
         />
-        {pagePosts.length ? (
-          <>
-            <div className="grid gap-6 md:grid-cols-2">
-              {pagePosts.map((post) => (
-                <PostCard key={post.slug} post={post} />
-              ))}
-            </div>
-            <Pagination basePath={BLOG_SLUG} currentPage={pageNumber} totalPages={totalPages} />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">記事を執筆中です。</p>
-        )}
+        <Suspense>
+          <BlogPostList
+            allPosts={posts}
+            currentPage={pageNumber}
+            postsPerPage={BLOG_POSTS_PER_PAGE}
+            basePath={BLOG_SLUG}
+          />
+        </Suspense>
       </section>
       <Script id={`blog-webpage-json-page-${pageNumber}`} type="application/ld+json">
         {JSON.stringify(blogPageJson)}
