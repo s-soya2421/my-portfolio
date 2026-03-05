@@ -10,15 +10,26 @@ vi.mock('./utils', () => ({
   paginateBlogPosts: (...args: unknown[]) => mockPaginateBlogPosts(...args),
 }));
 
-vi.mock('@/components/cards/post-card', () => ({
-  PostCard: ({ post }: { post: { title: string } }) => (
-    <article data-testid="post-card">{post.title}</article>
-  ),
-}));
-
-vi.mock('@/components/shared/pagination', () => ({
-  Pagination: ({ currentPage, totalPages }: { currentPage: number; totalPages: number }) => (
-    <div data-testid="pagination">{`${currentPage}/${totalPages}`}</div>
+vi.mock('@/components/blog/blog-post-list', () => ({
+  BlogPostList: ({
+    allPosts,
+    currentPage,
+    postsPerPage,
+  }: {
+    allPosts: { title: string; slug: string }[];
+    currentPage: number;
+    postsPerPage: number;
+  }) => (
+    <div data-testid="blog-post-list">
+      {allPosts.slice(0, postsPerPage).map((p) => (
+        <article key={p.slug} data-testid="post-card">
+          {p.title}
+        </article>
+      ))}
+      {allPosts.length > postsPerPage && (
+        <div data-testid="pagination">{`${currentPage}/${Math.ceil(allPosts.length / postsPerPage)}`}</div>
+      )}
+    </div>
   ),
 }));
 
@@ -49,16 +60,15 @@ describe('BlogPage', () => {
     mockGetAllBlogPosts.mockResolvedValue(posts);
     mockPaginateBlogPosts.mockReturnValue({
       pagePosts: posts,
-      totalPages: 2,
+      totalPages: 1,
       isValidPage: true,
     });
 
     const ui = await BlogPage();
     render(ui);
 
-    expect(mockPaginateBlogPosts).toHaveBeenCalledWith(posts, 1);
+    expect(screen.getByTestId('blog-post-list')).toBeTruthy();
     expect(screen.getAllByTestId('post-card')).toHaveLength(2);
-    expect(screen.getByTestId('pagination')).toHaveTextContent('1/2');
   });
 
   it('shows the empty state when there are no posts', async () => {
@@ -70,10 +80,9 @@ describe('BlogPage', () => {
     });
 
     const ui = await BlogPage();
-    const { container } = render(ui);
+    render(ui);
 
+    expect(screen.getByTestId('blog-post-list')).toBeTruthy();
     expect(screen.queryAllByTestId('post-card')).toHaveLength(0);
-    expect(screen.queryByTestId('pagination')).toBeNull();
-    expect(container.querySelectorAll('p.text-muted-foreground')).toHaveLength(2);
   });
 });
