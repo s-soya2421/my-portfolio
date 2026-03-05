@@ -6,7 +6,10 @@
       "Bash(git add:*)",
       "WebFetch(domain:github.com)",
       "Bash(npm run build:*)",
-      "Bash(npm run test:*)"
+      "Bash(npm run test:*)",
+      "Bash(git -C /mnt/c/Users/SoyaS/workspace/my-portfolio ls-files --error-unmatch .env.local 2>&1; git -C /mnt/c/Users/SoyaS/workspace/my-portfolio status --short | grep -E '\\\\.env')",
+      "Bash(git -C /mnt/c/Users/SoyaS/workspace/my-portfolio rm --cached .env.local)",
+      "Bash(git -C /mnt/c/Users/SoyaS/workspace/my-portfolio status --short | grep -E '\\\\.env')"
     ],
     "deny": [],
     "ask": []
