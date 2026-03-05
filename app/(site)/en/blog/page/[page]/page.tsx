@@ -1,15 +1,21 @@
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
-import { PostCard } from '@/components/cards/post-card';
+import { Suspense } from 'react';
+import { BlogPostList } from '@/components/blog/blog-post-list';
 import { SectionHeader } from '@/components/sections/section-header';
-import { Pagination } from '@/components/shared/pagination';
 import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
   webPageJsonLd,
 } from '@/lib/seo';
-import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from '../../constants';
+import {
+  BLOG_META_DESCRIPTION,
+  BLOG_POSTS_PER_PAGE,
+  BLOG_SECTION_COPY,
+  BLOG_SLUG,
+  BLOG_TITLE,
+} from '../../constants';
 import {
   getAllBlogPosts,
   getBlogPagePath,
@@ -27,7 +33,7 @@ const paginationLabels = {
   next: 'Next',
   prevAria: 'Go to previous page',
   nextAria: 'Go to next page',
-  pageLabel: (page: number) => `Page ${page}`,
+  pageLabel: 'Page',
 };
 
 const parsePageNumber = (value: string) => {
@@ -78,7 +84,7 @@ export default async function EnglishBlogPaginationPage({ params }: BlogPageProp
   }
 
   const posts = await getAllBlogPosts();
-  const { pagePosts, totalPages, isValidPage } = paginateBlogPosts(posts, pageNumber);
+  const { pagePosts, isValidPage } = paginateBlogPosts(posts, pageNumber);
 
   if (!isValidPage) {
     notFound();
@@ -122,23 +128,16 @@ export default async function EnglishBlogPaginationPage({ params }: BlogPageProp
           title={BLOG_SECTION_COPY.title}
           description={BLOG_SECTION_COPY.description}
         />
-        {pagePosts.length ? (
-          <>
-            <div className="grid gap-6 md:grid-cols-2">
-              {pagePosts.map((post) => (
-                <PostCard key={post.slug} post={post} />
-              ))}
-            </div>
-            <Pagination
-              basePath={BLOG_SLUG}
-              currentPage={pageNumber}
-              totalPages={totalPages}
-              labels={paginationLabels}
-            />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Posts are in progress.</p>
-        )}
+        <Suspense>
+          <BlogPostList
+            allPosts={posts}
+            currentPage={pageNumber}
+            postsPerPage={BLOG_POSTS_PER_PAGE}
+            basePath={BLOG_SLUG}
+            emptyMessage="Posts are in progress."
+            paginationLabels={paginationLabels}
+          />
+        </Suspense>
       </section>
       <Script id={`blog-webpage-json-page-${pageNumber}`} type="application/ld+json">
         {JSON.stringify(blogPageJson)}

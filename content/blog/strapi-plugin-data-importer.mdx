@@ -1,0 +1,147 @@
+---
+title: 'Strapi v5 向け CSV/JSON インポートプラグインを作った'
+description: '管理画面からCSVやJSONをウィザード形式で取り込めるStrapiプラグインを作った。背景・機能・実装の工夫・v0.1→v0.2の変遷をまとめる。'
+date: '2026-03-05'
+updated: '2026-03-05'
+tags: ['Strapi', 'TypeScript', 'OSS']
+draft: false
+---
+
+## TL;DR
+
+- Strapi v5 の管理画面からCSV・JSONを取り込める OSS プラグイン [`strapi-plugin-data-importer`](https://github.com/s-soya2421/strapi-plugin-data-importer) を作った。
+- ウィザード UI・Dry run・Rollback・バリデーション・Upsert モードなど、実務で欲しかった機能を一通り詰め込んだ。
+- v0.1.0 を 2026-03-03 にリリースし、翌日 v0.2.0 でJSON対応とUpsertモードを追加した。
+
+## なぜ作ったか
+
+Strapi でコンテンツを管理しているとき、初期データや移行データをまとめて投入したいケースが頻繁にある。公式の Content Manager は1件ずつしか入力できず、REST API を直接叩く方法だとスクリプトを書いて実行環境を整える必要がある。
+
+## 主な機能
+
+### ステップ型のウィザード UI
+
+管理画面のサイドバーに「Data Importer」が追加される。5ステップで完結する設計にした。
+
+1. **コンテンツタイプの選択** — Strapi のスキーマから自動取得。CSVテンプレートをダウンロードできる。
+2. **ファイルのアップロード** — CSV・JSON を選択してアップロード。先頭5行のプレビューを表示。
+3. **カラムマッピング** — CSVのヘッダーとStrapiフィールドの対応を確認・調整。必須フィールドには`*`を表示。
+4. **設定と実行** — インポートモード、Dry run、Rollback、バッチサイズを選んで実行。
+5. **結果確認** — 作成・更新・失敗件数を表示。失敗行はエラー詳細付きテーブルで確認・リトライ可能。
+
+### CSV テンプレートダウンロード
+
+コンテンツタイプを選ぶとそのフィールド名をヘッダーにしたCSVをダウンロードできる。`config/data-importer-mappings.json` で列名をカスタマイズすると、テンプレートにもその名前が反映される。
+
+```json
+{
+  "api::product.product": {
+    "商品名": "name",
+    "価格": "price",
+    "公開日": "publishedAt"
+  }
+}
+```
+
+### フィールド型バリデーション
+
+CSVはすべて文字列として読まれるので、インポート前に型チェックが必要になる。整数・浮動小数・真偽値・メールアドレス・列挙型を個別にバリデーションし、失敗した行はスキップして残りを続行する。必須フィールドが空の行も同様にエラー扱いにする。
+
+```
+title,price,active,email
+Hello,1200,true,hello@example.com   ← OK
+World,abc,yes,invalid-email         ← price と active と email でバリデーションエラー
+```
+
+### Dry run と Rollback
+
+- **Dry run** — バリデーションと件数の試算だけ行い、DBには何も書かない。本番投入前の確認に使う。
+- **Rollback** — インポート中に1件でも失敗した場合、そのランで作成したレコードを自動削除する。Upsert モードでの更新分は戻せないので注意。
+
+### インポート履歴
+
+各ランの結果が `config/data-importer-history.json` に最大50件保存される。管理画面下部の History セクションでは最新10件の日時・コンテンツタイプ・モード・件数を確認できる。
+
+## 実装で工夫した点
+
+### サーバー側: バッチ処理とロールバック管理
+
+大量データを一度に送ると API タイムアウトが起きるため、クライアント側でバッチに分割してから送信する設計にした。サーバーの `import` サービスはバッチを受け取り、1行ずつ `strapi.documents(uid).create` / `strapi.documents(uid).update` を呼ぶ。
+
+Rollback のために作成した `documentId` をランごとに配列で保持し、全行を処理し終えた後に失敗があれば `strapi.documents(uid).delete` を順次呼ぶ。
+
+```typescript
+const createdDocumentIds: string[] = [];
+
+for (const row of rows) {
+  try {
+    const created = await strapi.documents(uid).create({ data });
+    if (rollbackOnFailure) createdDocumentIds.push(created.documentId);
+    results.success++;
+  } catch (err) {
+    results.failed++;
+    // ...
+  }
+}
+
+// 全行処理後、失敗があれば一括ロールバック
+if (rollbackOnFailure && results.failed > 0 && !dryRun) {
+  for (const documentId of createdDocumentIds) {
+    await strapi.documents(uid).delete({ documentId });
+  }
+}
+```
+
+### フロントエンド: CSV パースとフラット化
+
+CSV は自作のパーサーでパースし、各セルを文字列として扱う。JSONはネストされたオブジェクトや配列が来るので、取り込み前に各値を文字列に変換する処理を入れた。
+
+リレーションフィールドはカンマ区切りの `documentId` 文字列として受け取り、サーバー側で配列に変換する。メディアフィールドは数値IDのカンマ区切りを想定している。
+
+### 自動カラムマッピング
+
+CSVのヘッダー名とStrapiのフィールド名を厳密一致で比較し、一致するものを自動でマッピングする。`data-importer-mappings.json` がある場合はそちらを優先する。ステップ3で目視確認・手動修正もできる。
+
+## v0.1.0 → v0.2.0 の変遷
+
+v0.1.0 は CSV インポートに特化した最小構成でリリースした。翌日 v0.2.0 で以下を追加した。
+
+| 追加機能 | 概要 |
+|---|---|
+| JSON インポート | 配列形式のJSONを受け付け、ネスト構造を自動フラット化 |
+| Upsert モード | キーフィールドで既存レコードを検索し、あれば更新、なければ作成 |
+| インポート履歴 | 過去50件の実行履歴をJSONファイルに保存・UI表示 |
+| 結果の詳細表示 | 作成・更新・失敗を分けてカウント表示 |
+
+## インストール・使い方
+
+```bash
+npm install strapi-plugin-data-importer
+```
+
+`config/plugins.ts` でプラグインを有効化する。
+
+```ts
+export default {
+  'data-importer': {
+    enabled: true,
+  },
+};
+```
+
+あとは管理画面を開くと「Data Importer」がサイドバーに表示される。
+
+## これから
+
+- より細かいアクセス権制御（ロール別にインポートできるコンテンツタイプを制限）
+- プレビューステップのデータ件数表示改善
+- Strapi v5 のリレーションコンポーネント対応の強化
+
+フィードバックや PR は [GitHub](https://github.com/s-soya2421/strapi-plugin-data-importer) からどうぞ。
+
+## まとめ
+
+- 管理画面から CSV・JSON をウィザード形式で取り込める Strapi v5 プラグインを作った。
+- Dry run・Rollback・バリデーション・Upsert・インポート履歴など、実務で必要になった機能を一通り実装した。
+- バッチ処理とロールバック管理はサーバー側で、CSV パース（自作）とJSONフラット化はフロントエンド側で担うシンプルな分割にした。
+- v0.1.0 でCSVインポートをリリースし、翌日 v0.2.0 でJSON対応とUpsertモード・履歴管理を追加した。

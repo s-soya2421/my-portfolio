@@ -1,0 +1,264 @@
+---
+title: 'コードレビューで私が見ているポイント'
+description: '命名・責任範囲・副作用・エラーハンドリング・テスタビリティ・PRの粒度など、コードレビューで個人的に重視している観点をコード例つきでまとめた。'
+date: '2026-03-05'
+updated: '2026-03-05'
+tags: ['Engineering', 'CodeReview', 'Practices']
+draft: false
+---
+
+## TL;DR
+
+- フォーマット・ビルド・テストはPRを出す前に自分で通す。レビューの場はコードの設計や意図を議論するために使う。
+- 命名・責任の単一化・副作用の局所化・エラー処理・テスタビリティ・早期リターン・PR粒度の7点を軸にレビューする。
+- レビューコメントは指摘より提案の形で書くと議論が生まれやすい。
+
+## はじめに
+
+コードレビューは「バグを見つける作業」だと思われがちだが、実際は**チームの設計思想を揃える場**でもある。レビュワーが何を見ているかが不透明だと、指摘が属人的になり、レビュイーが「また言い方の問題か…」と消耗していく。
+
+この記事では、自分がレビュー時に意識している観点を整理する。完全なチェックリストではなく、「ここを外すとじわじわ痛くなる」と感じているポイントに絞った。
+
+## 前提：レビューに出す前にやること
+
+コードレビューの観点を語る前に、一つ前の話をしたい。**レビュワーはコードの設計や意図を読むために集中力を使う**。そこにフォーマットのノイズが乗ると、本質的な指摘より先に表層的な話になってしまう。
+
+### 整形ツールを通す
+
+インデントがずれている、セミコロンがあったりなかったり、クォートが混在している——こういった状態でPRを出すと、レビュワーは「これはスタイルの問題か、意図的な差分か」を判断しながら差分を読む必要が生じる。
+
+プロジェクトにBiome・ESLint・Prettierなどの整形ツールが入っているなら、PR前に必ず通すこと。エディタ保存時に自動整形が走る設定にしておくと、そもそも差分にノイズが混入しにくくなる。
+
+```bash
+# 例：Biomeで整形 + lint
+npx biome check --write .
+```
+
+### ビルドとテストを通す
+
+「とりあえずレビューしてください」というPRでも、ビルドが通らない・テストが落ちる状態では、レビュワーはそこから先を読む動機が下がる。CIが落ちているPRは、レビュー依頼の前にまず自分で直す。
+
+```bash
+npm run build   # ビルドエラーがないか確認
+npm run test    # テストが通るか確認
+npm run lint    # lintエラーが残っていないか確認
+```
+
+### なぜ前提として書くか
+
+これらは「礼儀」ではなく**レビューのコストを下げるための合理的な行動**だ。フォーマットの指摘に時間をとられると、設計・ロジック・テストといった本来レビューで議論すべき観点に集中しにくくなる。整形・ビルド・テストをPR前に済ませておくことで、レビューの場をより価値ある議論に使えるようになる。
+
+## 1. 命名が意図を伝えているか
+
+名前は最初のドキュメントだ。コメントなしで意図が伝わるかどうかを確認する。
+
+### よくある例
+
+```typescript
+// ❌ 何を返すのか、何のフラグかわからない
+function check(u: User): boolean {
+  return u.status === 'active' && u.emailVerified;
+}
+
+// ✅ 関数名で前提条件が伝わる
+function canReceiveNotifications(user: User): boolean {
+  return user.status === 'active' && user.emailVerified;
+}
+```
+
+変数名も同様。`data`, `result`, `tmp`, `flag` といった汎用名は、スコープが広くなるにつれて読み手の負担を増やす。
+
+```typescript
+// ❌
+const data = await fetchUser(id);
+processData(data);
+
+// ✅
+const user = await fetchUser(id);
+sendWelcomeEmail(user);
+```
+
+**確認する観点:**
+- 関数名は動詞+目的語になっているか
+- 真偽値の変数・プロパティは `is` / `has` / `can` などで始まっているか
+- 省略形が文脈なしに読める略語かどうか (`usr`, `mgr` は微妙、`id`, `url` は問題なし)
+
+## 2. 関数・コンポーネントの責任が1つに絞られているか
+
+「この関数は何をする関数ですか？」と聞いたときに、「〜して、〜して、〜もします」と複数出てきたら要注意だ。
+
+```typescript
+// ❌ バリデーション・変換・保存・通知が混在
+async function submitOrder(raw: RawOrder) {
+  if (!raw.userId) throw new Error('userId is required');
+  if (raw.items.length === 0) throw new Error('items must not be empty');
+
+  const order = {
+    userId: raw.userId,
+    items: raw.items.map((item) => ({ ...item, price: item.price * 1.1 })),
+    createdAt: new Date(),
+  };
+
+  await db.orders.create(order);
+  await emailService.sendOrderConfirmation(order);
+  await slack.notify(`New order from ${raw.userId}`);
+}
+
+// ✅ 責任を分割する
+function validateOrder(raw: RawOrder): void {
+  if (!raw.userId) throw new Error('userId is required');
+  if (raw.items.length === 0) throw new Error('items must not be empty');
+}
+
+function buildOrder(raw: RawOrder): Order {
+  return {
+    userId: raw.userId,
+    items: raw.items.map((item) => ({ ...item, price: item.price * 1.1 })),
+    createdAt: new Date(),
+  };
+}
+
+async function submitOrder(raw: RawOrder) {
+  validateOrder(raw);
+  const order = buildOrder(raw);
+  await db.orders.create(order);
+  await emailService.sendOrderConfirmation(order);
+  await slack.notify(`New order from ${order.userId}`);
+}
+```
+
+分割後は各関数を独立してテストしやすくなる。`buildOrder` のロジックを確認するのに DB や外部サービスのモックは不要になる。
+
+## 3. 副作用が局所化されているか
+
+副作用（DBアクセス・外部API・グローバル状態の変更）が関数の奥深くに隠れていると、呼び出し元がそれを把握しにくくなり、テストも書きにくくなる。
+
+```typescript
+// ❌ 副作用が奥に埋まっている
+function applyDiscount(order: Order): Order {
+  const discount = discountCache.get(order.userId) ?? fetchDiscount(order.userId); // 外部通信が隠れている
+  discountCache.set(order.userId, discount); // グローバル状態の変更
+  return { ...order, total: order.total * (1 - discount) };
+}
+
+// ✅ 純粋な変換ロジックと副作用を分ける
+function applyDiscount(order: Order, discount: number): Order {
+  return { ...order, total: order.total * (1 - discount) };
+}
+
+// 呼び出し側でキャッシュと取得を管理
+const discount = discountCache.get(userId) ?? await fetchDiscount(userId);
+discountCache.set(userId, discount);
+const discountedOrder = applyDiscount(order, discount);
+```
+
+副作用を引数として渡す（Dependency Injection）か、呼び出し元に持ち上げることで、中のロジックを純粋な関数にできる。
+
+## 4. エラーハンドリングが適切か
+
+エラーを握り潰していないか、エラーの種類を区別しているかを確認する。
+
+```typescript
+// ❌ すべての例外を同じように扱っている
+async function getUser(id: string) {
+  try {
+    return await db.users.findById(id);
+  } catch (e) {
+    return null; // DB接続エラーもユーザー未存在も同じ扱い
+  }
+}
+
+// ✅ エラーの種類に応じて処理を分ける
+async function getUser(id: string): Promise<User | null> {
+  try {
+    return await db.users.findById(id);
+  } catch (e) {
+    if (e instanceof NotFoundError) return null;
+    throw e; // 予期しないエラーは上位に伝播させる
+  }
+}
+```
+
+また、バリデーションエラーをランタイムエラーとして扱うのも注意が必要だ。ユーザー入力のエラーは `throw new Error` ではなく、`Result` 型や `{ ok: false, error: ... }` 形式で返す方が設計として整理しやすいことが多い。
+
+なお、上記の例では `db` をモジュールスコープで直接参照しているが、実際のリポジトリ層ではコンストラクタでDBクライアントを受け取る形にすると、テスト時にモックへ差し替えやすくなる（セクション3参照）。
+
+## 5. テストから見たときに設計の問題が浮かぶか
+
+テストを書こうとして「モックが大変」「引数が多すぎる」「副作用を止められない」と感じたら、それは設計のシグナルだ。テスタビリティをレビューの文脈で読む。
+
+```typescript
+// ❌ テストのためにDateとMathをモックする必要がある
+function generateOrderId(): string {
+  return `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+// ✅ 生成ロジックを純粋にしてテストでシードを渡せる
+function generateOrderId(timestamp: number, random: number): string {
+  return `ORD-${timestamp}-${Math.floor(random * 1000)}`;
+}
+
+// 本番
+generateOrderId(Date.now(), Math.random());
+// テスト
+expect(generateOrderId(1000000, 0.5)).toBe('ORD-1000000-500');
+```
+
+テストが書きやすいコードは、多くの場合そのまま変更しやすいコードでもある。
+
+## 6. 早期リターンで読みやすさを上げているか
+
+ネストが深くなっているコードは、ガード節（早期リターン）で平坦にできることが多い。
+
+```typescript
+// ❌ 右に伸びるネスト
+function processPayment(order: Order) {
+  if (order.status === 'pending') {
+    if (order.total > 0) {
+      if (paymentGateway.isAvailable()) {
+        chargeCard(order);
+      }
+    }
+  }
+}
+
+// ✅ ガード節で意図を先に示す
+function processPayment(order: Order) {
+  if (order.status !== 'pending') return;
+  if (order.total <= 0) return;
+  if (!paymentGateway.isAvailable()) return;
+  chargeCard(order);
+}
+```
+
+ガード節はエラーケース・例外ケースを先に「弾く」ことで、メインロジックの前提条件が明確になる。
+
+## 7. PRの粒度は適切か
+
+コードそのものではなくPR単位の話だが、レビューのしやすさに直結するのでここに書く。
+
+**1PRに詰め込みすぎなケース:**
+- リファクタリングと機能追加が同じPRに入っている
+- 無関係なファイルの整形・コメント削除が混在している
+
+この場合、差分が何を変えたのかを追うのが難しくなる。「このリファクタは機能に影響しないのか？」という不安がレビュワーに生まれる。
+
+**分割の原則:**
+- リファクタリングは別PR（まずリファクタ → 次に機能追加）
+- 意図が1文で説明できる単位にする
+- 「PR説明がないと差分の意図がわからない」状態を避ける
+
+## まとめ
+
+| 観点 | 確認すること |
+|---|---|
+| 前提 | 整形・ビルド・テストをPR前に通しているか |
+| 命名 | 関数・変数名が意図を一言で伝えるか |
+| 責任 | 「何をする関数か」が1文で言えるか |
+| 副作用 | 隠れた副作用が関数の奥に埋まっていないか |
+| エラー | 例外の種類を区別して適切に処理しているか |
+| テスタビリティ | テストを書こうとして詰まるポイントがないか |
+| 可読性 | ネストを早期リターンで平坦にできないか |
+| PR粒度 | 差分の意図が1文で説明できる単位になっているか |
+
+レビューコメントは指摘より提案のほうが受け取りやすい。「これはこうしたほうがいい」ではなく「こう書くと〜という理由でわかりやすくなると思うのですが、どうでしょう？」という形で書くと、議論が生まれやすくなる。
