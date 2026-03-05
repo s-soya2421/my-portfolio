@@ -47,7 +47,7 @@ type PaginationLabels = {
   next: string;
   prevAria: string;
   nextAria: string;
-  pageLabel: (page: number) => string;
+  pageLabel: string;
 };
 
 const defaultLabels: PaginationLabels = {
@@ -56,7 +56,7 @@ const defaultLabels: PaginationLabels = {
   next: '次へ',
   prevAria: '前のページへ',
   nextAria: '次のページへ',
-  pageLabel: (page) => `ページ ${page}`,
+  pageLabel: 'ページ',
 };
 
 const PaginationControl = ({
@@ -118,7 +118,7 @@ export const Pagination = ({
             key={pageNumber}
             href={href}
             prefetch={false}
-            aria-label={copy.pageLabel(pageNumber)}
+            aria-label={`${copy.pageLabel} ${pageNumber}`}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               baseButtonClasses,

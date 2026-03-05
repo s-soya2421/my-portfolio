@@ -1,14 +1,20 @@
 import Script from 'next/script';
-import { PostCard } from '@/components/cards/post-card';
+import { Suspense } from 'react';
+import { BlogPostList } from '@/components/blog/blog-post-list';
 import { SectionHeader } from '@/components/sections/section-header';
-import { Pagination } from '@/components/shared/pagination';
 import {
   buildBreadcrumbJsonLd,
   buildItemListJsonLd,
   buildMetadata,
   webPageJsonLd,
 } from '@/lib/seo';
-import { BLOG_META_DESCRIPTION, BLOG_SECTION_COPY, BLOG_SLUG, BLOG_TITLE } from './constants';
+import {
+  BLOG_META_DESCRIPTION,
+  BLOG_POSTS_PER_PAGE,
+  BLOG_SECTION_COPY,
+  BLOG_SLUG,
+  BLOG_TITLE,
+} from './constants';
 import { getAllBlogPosts, paginateBlogPosts } from './utils';
 
 export const metadata = buildMetadata({
@@ -19,7 +25,7 @@ export const metadata = buildMetadata({
 
 export default async function BlogPage() {
   const posts = await getAllBlogPosts();
-  const { pagePosts, totalPages } = paginateBlogPosts(posts, 1);
+  const { pagePosts } = paginateBlogPosts(posts, 1);
 
   const breadcrumb = buildBreadcrumbJsonLd({
     slug: BLOG_SLUG,
@@ -56,18 +62,14 @@ export default async function BlogPage() {
           title={BLOG_SECTION_COPY.title}
           description={BLOG_SECTION_COPY.description}
         />
-        {pagePosts.length ? (
-          <>
-            <div className="grid gap-6 md:grid-cols-2">
-              {pagePosts.map((post) => (
-                <PostCard key={post.slug} post={post} />
-              ))}
-            </div>
-            <Pagination basePath={BLOG_SLUG} currentPage={1} totalPages={totalPages} />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">記事を執筆中です。</p>
-        )}
+        <Suspense>
+          <BlogPostList
+            allPosts={posts}
+            currentPage={1}
+            postsPerPage={BLOG_POSTS_PER_PAGE}
+            basePath={BLOG_SLUG}
+          />
+        </Suspense>
       </section>
       <Script id="blog-webpage-json" type="application/ld+json">
         {JSON.stringify(blogPageJson)}

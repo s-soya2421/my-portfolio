@@ -9,7 +9,7 @@ describe('Pagination', () => {
     next: 'Next',
     prevAria: 'Previous page',
     nextAria: 'Next page',
-    pageLabel: (page: number) => `Page ${page}`,
+    pageLabel: 'Page',
   };
 
   it('returns null when there is only one page', () => {
