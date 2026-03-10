@@ -1,0 +1,108 @@
+---
+title: 'Strapi プラグインの dist が 22MB あったので externals を直したら 448KB になった'
+description: '@strapi/pack-up でビルドした Strapi v5 プラグインのバンドルサイズが膨大になる原因と、externals 設定の落とし穴を解説する。'
+date: '2026-03-11'
+updated: '2026-03-11'
+tags: ['Strapi', 'TypeScript', 'Build', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- `@strapi/pack-up` でビルドした Strapi v5 プラグインの dist が **22MB** になっていた。
+- 原因は `packup.config.ts` の `externals` に `@strapi/admin` が抜けており、Strapi Design System ごとバンドルに含まれていたこと。
+- `@strapi/admin/strapi-admin`（サブパス）を指定していたが、**pack-up の内部実装はパッケージ名でマッチングする**ため効いていなかった。
+- `externals` を `'@strapi/admin'` に修正したところ、dist が **448KB** まで縮小した。
+
+## 背景
+
+[strapi-plugin-data-importer](https://github.com/s-soya2421/strapi-plugin-data-importer) の開発中、npm publish 前に dist サイズを確認したところ、合計 **22MB** という数字が目に入った。
+
+```
+dist/
+  _chunks/
+    HomePage-xxxxx.js   3.2MB
+    ...
+```
+
+Strapi プラグインとしては明らかに異常な大きさだ。
+
+## 原因調査
+
+### バンドルの中身を確認する
+
+まず `dist/` の中身を展開して、何が含まれているか確認した。Strapi Design System (`@strapi/design-system`) や `@radix-ui/*` などのライブラリが大量に含まれており、`@strapi/admin` が丸ごとバンドルされていることがわかった。
+
+### `packup.config.ts` を確認する
+
+当時の設定は以下のようになっていた。
+
+```typescript:packup.config.ts
+import { defineConfig } from '@strapi/pack-up';
+
+export default defineConfig({
+  externals: [
+    '@strapi/utils',
+    '@strapi/admin/strapi-admin',  // ← サブパスで指定していた
+    'react',
+    'react-dom',
+    'react-intl',
+  ],
+});
+```
+
+`@strapi/admin` から export されるモジュールはサブパス `@strapi/admin/strapi-admin` 経由で使うのが Strapi v5 の作法だ。そのサブパスを external に指定しているのだから、バンドルから除外されるはずと思っていた。ところが実際には除外されていなかった。
+
+### pack-up のソースを読む
+
+`@strapi/pack-up` のソースを追ってみると、externals のマッチング処理は rollup の external オプションとして渡されており、文字列の場合は**前方一致（startsWith）ではなく完全一致**でモジュール ID と比較されていた。
+
+つまり、`import { Button } from '@strapi/admin/strapi-admin'` というインポートは：
+
+- external: `'@strapi/admin/strapi-admin'` → `'@strapi/admin/strapi-admin' === '@strapi/admin/strapi-admin'` で**一致する**
+- external: `'@strapi/admin'` → `'@strapi/admin' === '@strapi/admin/strapi-admin'` で**一致しない**
+
+なら `@strapi/admin/strapi-admin` で合っていそうだが、問題は `@strapi/admin` 配下には複数のエントリポイントがあり、内部的にはパッケージ名レベルでまとめて処理されるケースがあることだ。pack-up の外部パッケージ検出ロジックは、`node_modules` 内の `package.json` の `name` フィールド（`@strapi/admin`）でグルーピングする実装になっており、**サブパス単位では外部パッケージとして認識されない**パスが存在する。
+
+結果として `@strapi/admin` の一部コードがバンドルに取り込まれ、それが依存する Strapi Design System も芋づる式に含まれていた。
+
+## 解決策
+
+`externals` を**サブパスではなくパッケージ名**で指定する。
+
+```typescript:packup.config.ts
+import { defineConfig } from '@strapi/pack-up';
+
+export default defineConfig({
+  externals: [
+    '@strapi/utils',
+    '@strapi/admin',   // ← @strapi/admin/strapi-admin ではなくパッケージ名で指定
+    'react',
+    'react-dom',
+    'react-intl',
+  ],
+});
+```
+
+### externals とは何か
+
+Strapi プラグインは Strapi 本体のランタイム上で動く。つまり `react` や `@strapi/admin` は実行時にすでにホスト側に存在している。`externals` に指定することで「このパッケージはバンドルに含めず、実行時にホストから参照する」という扱いになり、重複インクルードを防げる。
+
+`@strapi/admin` を external にしないと、プラグイン側が独自に `@strapi/admin`（Strapi Design System 含む）を丸ごと持ち込む形になる。これがバンドルサイズ爆発の正体だ。
+
+## 結果
+
+修正後にリビルドした結果：
+
+| | 修正前 | 修正後 |
+|---|---|---|
+| dist 合計 | 22MB | 448KB |
+| HomePage chunk | 3.2MB | 40KB |
+
+dist サイズが約 **1/50** になった。
+
+## まとめ
+
+- `@strapi/pack-up` の externals はパッケージ名レベルで指定する。サブパス（`@strapi/admin/strapi-admin`）で指定しても、pack-up の内部実装の都合でバンドルから除外されないケースがある。
+- Strapi プラグインで `@strapi/admin`・`react`・`react-dom`・`react-intl` は必ず external に含めること。
+- publish 前にバンドルサイズを確認する習慣をつけると、この手の問題を早期に発見できる。
