@@ -1,0 +1,264 @@
+---
+title: 'What I Look for in Code Review'
+description: 'A practical guide to the code review criteria I personally focus on: naming, single responsibility, side-effect isolation, error handling, testability, early returns, and PR size — with code examples throughout.'
+date: '2026-03-05'
+updated: '2026-03-05'
+tags: ['Engineering', 'CodeReview', 'Practices']
+draft: false
+---
+
+## TL;DR
+
+- Run formatting, build, and tests yourself before opening a PR. Save the review session for discussing design and intent.
+- I review along seven axes: naming, single responsibility, side-effect isolation, error handling, testability, early returns, and PR size.
+- Writing review comments as suggestions rather than directives opens up better discussions.
+
+## Introduction
+
+Code review is often seen as "finding bugs," but it is equally a place to **align a team's design philosophy**. When it is unclear what a reviewer is looking for, feedback becomes idiosyncratic and reviewees end up drained — "is this another style nitpick?"
+
+This post documents the criteria I keep in mind during reviews. It is not a comprehensive checklist; it is the points where I have learned that skipping them causes slow, creeping pain.
+
+## Prerequisite: Things to Do Before Requesting Review
+
+Before getting into review criteria, I want to address the step before that. **Reviewers spend their focus on reading design and intent.** Formatting noise on top of that shifts the conversation to the surface before it reaches substance.
+
+### Run your formatter
+
+Misaligned indentation, inconsistent semicolons, mixed quote styles — submitting a PR in this state forces the reviewer to figure out whether each diff is a style choice or an intentional change.
+
+If the project has Biome, ESLint, Prettier, or similar tools, always run them before opening a PR. Enabling auto-format on save in your editor prevents this noise from creeping in at all.
+
+```bash
+# Example: format and lint with Biome
+npx biome check --write .
+```
+
+### Pass the build and tests
+
+Even a "just take a look" PR loses reviewer motivation when the build is broken or tests are failing. Fix CI failures yourself before requesting review.
+
+```bash
+npm run build   # check for build errors
+npm run test    # confirm tests pass
+npm run lint    # check for lint errors
+```
+
+### Why state this as a prerequisite?
+
+This is not about etiquette — it is **rational behavior that reduces the cost of review**. When formatting feedback consumes the session, there is less room for what review is actually for: discussing design, logic, and test coverage. Sorting out formatting, build, and tests before the PR frees the review session for higher-value discussion.
+
+## 1. Does the naming communicate intent?
+
+Names are the first documentation. The question is whether intent comes through without comments.
+
+### Common examples
+
+```typescript
+// ❌ Unclear what it returns or what the flag means
+function check(u: User): boolean {
+  return u.status === 'active' && u.emailVerified;
+}
+
+// ✅ The function name conveys the precondition
+function canReceiveNotifications(user: User): boolean {
+  return user.status === 'active' && user.emailVerified;
+}
+```
+
+The same applies to variable names. Generic names like `data`, `result`, `tmp`, `flag` increase cognitive load as scope grows.
+
+```typescript
+// ❌
+const data = await fetchUser(id);
+processData(data);
+
+// ✅
+const user = await fetchUser(id);
+sendWelcomeEmail(user);
+```
+
+**Things to check:**
+- Is the function name verb + object?
+- Do boolean variables and properties start with `is` / `has` / `can`?
+- Are abbreviations readable without context? (`usr`, `mgr` are questionable; `id`, `url` are fine)
+
+## 2. Is the function or component responsible for exactly one thing?
+
+If asking "what does this function do?" produces "it does X, then Y, and also Z," that is a warning sign.
+
+```typescript
+// ❌ Validation, transformation, persistence, and notification all mixed together
+async function submitOrder(raw: RawOrder) {
+  if (!raw.userId) throw new Error('userId is required');
+  if (raw.items.length === 0) throw new Error('items must not be empty');
+
+  const order = {
+    userId: raw.userId,
+    items: raw.items.map((item) => ({ ...item, price: item.price * 1.1 })),
+    createdAt: new Date(),
+  };
+
+  await db.orders.create(order);
+  await emailService.sendOrderConfirmation(order);
+  await slack.notify(`New order from ${raw.userId}`);
+}
+
+// ✅ Responsibilities separated
+function validateOrder(raw: RawOrder): void {
+  if (!raw.userId) throw new Error('userId is required');
+  if (raw.items.length === 0) throw new Error('items must not be empty');
+}
+
+function buildOrder(raw: RawOrder): Order {
+  return {
+    userId: raw.userId,
+    items: raw.items.map((item) => ({ ...item, price: item.price * 1.1 })),
+    createdAt: new Date(),
+  };
+}
+
+async function submitOrder(raw: RawOrder) {
+  validateOrder(raw);
+  const order = buildOrder(raw);
+  await db.orders.create(order);
+  await emailService.sendOrderConfirmation(order);
+  await slack.notify(`New order from ${order.userId}`);
+}
+```
+
+After splitting, each function can be tested independently. Testing `buildOrder` logic requires no DB or external service mocks.
+
+## 3. Are side effects isolated?
+
+When side effects (DB access, external APIs, global state mutations) are buried deep inside a function, callers cannot reason about them easily and tests become hard to write.
+
+```typescript
+// ❌ Side effect hidden inside
+function applyDiscount(order: Order): Order {
+  const discount = discountCache.get(order.userId) ?? fetchDiscount(order.userId); // hidden network call
+  discountCache.set(order.userId, discount); // global state mutation
+  return { ...order, total: order.total * (1 - discount) };
+}
+
+// ✅ Pure transformation separated from side effects
+function applyDiscount(order: Order, discount: number): Order {
+  return { ...order, total: order.total * (1 - discount) };
+}
+
+// Caller manages cache and fetch
+const discount = discountCache.get(userId) ?? await fetchDiscount(userId);
+discountCache.set(userId, discount);
+const discountedOrder = applyDiscount(order, discount);
+```
+
+Passing side effects in as arguments (dependency injection) or lifting them to the call site keeps the inner logic as a pure function.
+
+## 4. Is error handling appropriate?
+
+Check whether errors are being swallowed and whether different error types are being distinguished.
+
+```typescript
+// ❌ All exceptions treated the same way
+async function getUser(id: string) {
+  try {
+    return await db.users.findById(id);
+  } catch (e) {
+    return null; // DB connection error treated the same as "user not found"
+  }
+}
+
+// ✅ Handle errors according to their type
+async function getUser(id: string): Promise<User | null> {
+  try {
+    return await db.users.findById(id);
+  } catch (e) {
+    if (e instanceof NotFoundError) return null;
+    throw e; // propagate unexpected errors
+  }
+}
+```
+
+Also watch for treating validation errors as runtime exceptions. User input errors are often cleaner to return as a `Result` type or `{ ok: false, error: ... }` shape rather than throwing.
+
+Note: in the example above `db` is referenced directly at module scope. In real repository layers, receiving the DB client via a constructor makes it easy to swap in a mock during tests (see section 3).
+
+## 5. Does trying to write a test reveal design problems?
+
+If writing a test feels hard because mocks are complex, there are too many arguments, or side effects cannot be stopped — that is a design signal. Read testability as a review lens.
+
+```typescript
+// ❌ Requires mocking Date and Math to test
+function generateOrderId(): string {
+  return `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+// ✅ Pure function that accepts a seed for testing
+function generateOrderId(timestamp: number, random: number): string {
+  return `ORD-${timestamp}-${Math.floor(random * 1000)}`;
+}
+
+// Production
+generateOrderId(Date.now(), Math.random());
+// Test
+expect(generateOrderId(1000000, 0.5)).toBe('ORD-1000000-500');
+```
+
+Code that is easy to test is usually also easy to change.
+
+## 6. Are early returns reducing nesting?
+
+Deeply nested code can often be flattened with guard clauses (early returns).
+
+```typescript
+// ❌ Rightward drift
+function processPayment(order: Order) {
+  if (order.status === 'pending') {
+    if (order.total > 0) {
+      if (paymentGateway.isAvailable()) {
+        chargeCard(order);
+      }
+    }
+  }
+}
+
+// ✅ Guard clauses state preconditions upfront
+function processPayment(order: Order) {
+  if (order.status !== 'pending') return;
+  if (order.total <= 0) return;
+  if (!paymentGateway.isAvailable()) return;
+  chargeCard(order);
+}
+```
+
+Guard clauses reject error cases and edge cases early, making the preconditions of the main logic explicit.
+
+## 7. Is the PR an appropriate size?
+
+This is about the PR unit rather than the code itself, but it directly affects how easy the review is.
+
+**Signs of too much packed into one PR:**
+- Refactoring and a feature addition in the same PR
+- Unrelated formatting or comment cleanups mixed in
+
+This makes it hard to follow what actually changed. The reviewer is left wondering "does this refactor affect behavior?"
+
+**Principles for splitting:**
+- Refactoring goes in its own PR (refactor first, then add the feature)
+- Each PR should be explainable in one sentence
+- Avoid a state where "you need the description to understand what the diff is doing"
+
+## Summary
+
+| Criterion | What to check |
+|---|---|
+| Prerequisite | Formatting, build, and tests done before opening the PR |
+| Naming | Does the name convey intent in a word or two? |
+| Responsibility | Can you describe what the function does in one sentence? |
+| Side effects | Are hidden side effects buried inside the function? |
+| Error handling | Are different exception types distinguished and handled appropriately? |
+| Testability | Are there friction points when trying to write tests? |
+| Readability | Can nesting be flattened with early returns? |
+| PR size | Is the diff explainable in one sentence? |
+
+Review comments land better as suggestions than directives. Instead of "this should be like this," try "I think writing it this way would make it clearer because of X — what do you think?" That framing tends to open up discussion rather than closing it down.

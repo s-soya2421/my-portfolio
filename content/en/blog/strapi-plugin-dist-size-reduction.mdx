@@ -1,0 +1,108 @@
+---
+title: 'My Strapi Plugin dist Was 22 MB — Fixing externals Brought It Down to 448 KB'
+description: 'The dist of a Strapi v5 plugin built with @strapi/pack-up ballooned to 22 MB. The cause was a missing @strapi/admin entry in externals, and the way pack-up matches package names internally made the subpath workaround ineffective.'
+date: '2026-03-11'
+updated: '2026-03-11'
+tags: ['Strapi', 'TypeScript', 'Build', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- The dist of a Strapi v5 plugin built with `@strapi/pack-up` was **22 MB**.
+- The cause: `@strapi/admin` was missing from `externals` in `packup.config.ts`, so Strapi Design System was bundled in its entirety.
+- I had specified the subpath `@strapi/admin/strapi-admin` in externals, but **pack-up matches by package name internally**, so the subpath entry had no effect.
+- Changing `externals` to `'@strapi/admin'` (package name) reduced the dist to **448 KB**.
+
+## Background
+
+While developing [strapi-plugin-data-importer](https://github.com/s-soya2421/strapi-plugin-data-importer), I checked the dist size before running `npm publish` and saw a total of **22 MB**.
+
+```
+dist/
+  _chunks/
+    HomePage-xxxxx.js   3.2MB
+    ...
+```
+
+That is obviously too large for a Strapi plugin.
+
+## Investigation
+
+### Inspecting the bundle contents
+
+First I unpacked `dist/` and checked what was inside. It contained a large amount of library code: `@strapi/design-system`, `@radix-ui/*`, and similar packages — indicating that `@strapi/admin` had been bundled in its entirety.
+
+### Reviewing `packup.config.ts`
+
+The configuration at the time looked like this:
+
+```typescript:packup.config.ts
+import { defineConfig } from '@strapi/pack-up';
+
+export default defineConfig({
+  externals: [
+    '@strapi/utils',
+    '@strapi/admin/strapi-admin',  // ← subpath
+    'react',
+    'react-dom',
+    'react-intl',
+  ],
+});
+```
+
+Modules exported from `@strapi/admin` are imported via the subpath `@strapi/admin/strapi-admin` in Strapi v5. I had specified that subpath as external, so I expected it to be excluded from the bundle — but it was not.
+
+### Reading the pack-up source
+
+Tracing the `@strapi/pack-up` source, the externals matching logic is passed to rollup's `external` option. For strings, it performs an **exact match** against the module ID, not a prefix match.
+
+So for `import { Button } from '@strapi/admin/strapi-admin'`:
+
+- external: `'@strapi/admin/strapi-admin'` → `'@strapi/admin/strapi-admin' === '@strapi/admin/strapi-admin'` → **matches**
+- external: `'@strapi/admin'` → `'@strapi/admin' === '@strapi/admin/strapi-admin'` → **does not match**
+
+That suggests `@strapi/admin/strapi-admin` should be correct. The problem is that `@strapi/admin` has multiple entry points, and some internal paths are processed at the package name level. Pack-up's external package detection groups by the `name` field in `node_modules/*/package.json` (i.e., `@strapi/admin`), and **some paths are not recognized as external when specified via a subpath**.
+
+As a result, part of `@strapi/admin`'s code was pulled into the bundle, and Strapi Design System came along as a transitive dependency.
+
+## Solution
+
+Specify externals at the **package name level** rather than the subpath level.
+
+```typescript:packup.config.ts
+import { defineConfig } from '@strapi/pack-up';
+
+export default defineConfig({
+  externals: [
+    '@strapi/utils',
+    '@strapi/admin',   // ← package name, not @strapi/admin/strapi-admin
+    'react',
+    'react-dom',
+    'react-intl',
+  ],
+});
+```
+
+### What externals means
+
+Strapi plugins run on top of the Strapi runtime. That means `react` and `@strapi/admin` already exist on the host at runtime. Marking them as `external` tells the bundler "do not include this package; reference it from the host at runtime," which prevents duplicate inclusion.
+
+Without `@strapi/admin` in externals, the plugin brings in its own copy of `@strapi/admin` (including Strapi Design System). That is what caused the size explosion.
+
+## Result
+
+After fixing and rebuilding:
+
+| | Before | After |
+|---|---|---|
+| dist total | 22 MB | 448 KB |
+| HomePage chunk | 3.2 MB | 40 KB |
+
+The dist size dropped by roughly **50×**.
+
+## Summary
+
+- With `@strapi/pack-up`, specify externals at the package name level. Specifying a subpath (`@strapi/admin/strapi-admin`) may not exclude the package from the bundle due to how pack-up resolves external packages internally.
+- Always include `@strapi/admin`, `react`, `react-dom`, and `react-intl` in externals for Strapi plugins.
+- Make it a habit to check bundle size before publishing — it catches issues like this early.

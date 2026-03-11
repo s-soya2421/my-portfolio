@@ -1,0 +1,12 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4945FF" />
+      <stop offset="100%" stop-color="#0C75AF" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)" rx="48" />
+  <text x="100" y="240" font-family="'Inter', sans-serif" font-size="70" font-weight="700" fill="white">strapi-plugin-data-importer</text>
+  <text x="100" y="330" font-family="'Inter', sans-serif" font-size="34" fill="rgba(255,255,255,0.85)">Strapi v5 向け CSV / JSON インポートプラグイン</text>
+  <text x="100" y="420" font-family="'Inter', sans-serif" font-size="28" fill="rgba(255,255,255,0.7)">TypeScript / Strapi v5 / OSS</text>
+</svg>
