@@ -1,0 +1,97 @@
+---
+title: 'Root Cause of 502 Errors in Strapi + ALB and Best Practices for Timeout Configuration'
+description: 'Intermittent 502 errors in a Strapi + ALB setup are usually caused by a mismatch between ALB connection reuse and Node.js keepAliveTimeout (default 5 s), not requestTimeout. Here is the explanation and the recommended fix.'
+date: '2026-01-22'
+updated: '2026-01-22'
+tags: ['AWS', 'ALB', 'Strapi', 'Node.js', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- Intermittent 502 errors in a Strapi + ALB setup are mainly caused by a mismatch between **ALB connection reuse** and **Node.js `keepAliveTimeout` (default 5 s)**.
+- When ALB tries to reuse an idle TCP connection, Node.js has already closed it, resulting in `502 Bad Gateway`.
+- The fix is to set `keepAliveTimeout` longer than the ALB idle timeout in the `bootstrap` function — this is the most direct and effective solution.
+
+## Common Misconception and Background
+
+- **Infrastructure:** ALB → ECS Fargate (Strapi / Node.js)
+- **Symptom:** No errors in the application logs, but 502 errors appearing frequently in ALB metrics.
+
+When facing this problem, many people assume that the server's `requestTimeout` is shorter than the ALB idle timeout. That is not necessarily true. Node.js `requestTimeout` defaults to 5 minutes, so the real culprit is usually elsewhere.
+
+## Root Cause Explained
+
+The heart of the issue is a mismatch in timeout settings between ALB and Node.js — specifically in how **Keep-Alive** is handled.
+
+- **ALB behavior:** Within its idle timeout (default 60 s), ALB reuses established TCP connections for performance.
+- **Node.js behavior:** The default `keepAliveTimeout` is **5 seconds**. If no new request arrives within that window after a request completes, Node.js unilaterally closes the connection.
+
+This mismatch triggers 502 errors in the following sequence:
+
+1. ALB forwards a client request to Strapi; the request completes normally.
+2. ALB pools the connection to reuse it for the next request (within the 60 s idle timeout).
+3. Strapi (Node.js) closes the connection after **5 s** of inactivity (sends a `FIN` packet).
+4. ALB, unaware the connection is closed, sends the next request over it.
+5. The target does not respond, so ALB returns `502 Bad Gateway` to the client.
+
+This is the mechanism behind the intermittent 502 errors.
+
+## Solution
+
+Set the Node.js timeout values higher than ALB's to prevent unintended connection drops.
+
+### 1. Adjust `keepAliveTimeout` in the `bootstrap` function (recommended)
+
+The best practice is to fix the direct cause by adjusting `keepAliveTimeout`. Set it on the server instance inside Strapi's `bootstrap` function in `src/index.js`.
+
+```javascript:src/index.js
+'use strict';
+
+module.exports = {
+  // ...
+  bootstrap({ strapi }) {
+    // Note: depending on the Strapi version and startup timing,
+    // strapi.server may not exist yet at bootstrap time.
+    // Always guard with an existence check.
+    if (strapi.server && strapi.server.httpServer) {
+        const albIdleTimeout = 60 * 1000; // match your ALB idle timeout
+
+        // Set slightly longer than the ALB idle timeout
+        strapi.server.httpServer.keepAliveTimeout = albIdleTimeout + 5 * 1000; // e.g. 65 s
+        strapi.server.httpServer.headersTimeout = albIdleTimeout + 10 * 1000; // e.g. 70 s
+    }
+  },
+};
+```
+
+### 2. (Optional) Set `requestTimeout` in `config/server.js`
+
+If you also need to handle slow requests such as heavy DB queries, setting `requestTimeout` adds an extra layer of robustness.
+
+**Note:** Use the syntax recommended by the official Strapi documentation.
+
+```javascript:config/server.js
+module.exports = ({ env }) => ({
+  host: env('HOST', '0.0.0.0'),
+  port: env.int('PORT', 1337),
+  app: {
+    keys: env.array('APP_KEYS'),
+  },
+
+  http: {
+    serverOptions: {
+      // Set longer than the ALB idle timeout
+      requestTimeout: 65 * 1000,
+    },
+  },
+});
+```
+
+After deploying with this configuration, the 502 errors were completely resolved.
+
+## Summary and Next Steps
+
+In an ALB + Node.js environment, 502 errors are most commonly caused by a `keepAliveTimeout` mismatch. Rather than blindly increasing `requestTimeout`, start by adjusting `keepAliveTimeout` to match the ALB configuration.
+
+This fix is an infrastructure-level setting change. If the API itself is slow to respond, that is a separate performance issue — use an APM tool to identify bottlenecks and follow up with query optimization or index tuning.

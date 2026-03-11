@@ -1,0 +1,54 @@
+---
+title: 'strapi-plugin-data-importer'
+description: 'An open-source Strapi v5 plugin that lets you import CSV and JSON files through a wizard UI in the admin panel. Includes Dry run, Rollback, and Upsert mode out of the box.'
+date: '2026-03-03'
+tags: ['Strapi', 'TypeScript', 'OSS']
+cover: '/images/projects/strapi-plugin-cover.svg'
+role: 'Personal project'
+tech: ['TypeScript', 'Strapi v5', 'React']
+links:
+  github: 'https://github.com/s-soya2421/strapi-plugin-data-importer'
+  npm: 'https://www.npmjs.com/package/strapi-plugin-data-importer'
+draft: false
+---
+
+## Background
+
+When managing content in Strapi, bulk-importing initial or migrated data is a common need. The built-in Content Manager only supports one record at a time, and hitting the REST API directly requires writing and running a custom script. I built this plugin to solve my own day-to-day friction and released it as OSS.
+
+## Key Features
+
+### 5-Step Wizard UI
+
+A "Data Importer" entry appears in the admin sidebar. The flow is five steps:
+
+1. **Select content type** — fetched automatically from the schema. Download a CSV template here.
+2. **Upload file** — pick a CSV or JSON file; a 5-row preview is shown immediately.
+3. **Column mapping** — review and adjust how CSV headers map to Strapi fields.
+4. **Configure & run** — choose Dry run, Rollback, batch size, then execute.
+5. **Review results** — see created / updated / failed counts. Failed rows show error details and can be retried.
+
+### Dry Run & Rollback
+
+- **Dry run** — validates and counts rows without writing to the database.
+- **Rollback** — if any row fails during import, all records created in that run are automatically deleted.
+
+### Upsert Mode
+
+Looks up existing records by a key field and updates them if found, creates them otherwise. Useful for incremental data syncs.
+
+### Import History
+
+Results of each run are stored (up to 50 entries). The last 10 runs are visible in the admin panel with timestamps and record counts.
+
+## Release History
+
+v0.1.0 (2026-03-03) launched with CSV import as the minimal feature set. The next day, v0.2.0 added JSON support, Upsert mode, and import history.
+
+## Installation
+
+```bash
+npm install strapi-plugin-data-importer
+```
+
+Enable the plugin in `config/plugins.ts` and the "Data Importer" option appears in the admin sidebar automatically.

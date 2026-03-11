@@ -1,0 +1,147 @@
+---
+title: 'Building a CSV/JSON Import Plugin for Strapi v5'
+description: 'I built an open-source Strapi plugin that lets you import CSV and JSON files through a wizard UI in the admin panel. This post covers the motivation, features, implementation decisions, and the v0.1 → v0.2 evolution.'
+date: '2026-03-05'
+updated: '2026-03-05'
+tags: ['Strapi', 'TypeScript', 'OSS']
+draft: false
+---
+
+## TL;DR
+
+- Built an OSS plugin [`strapi-plugin-data-importer`](https://github.com/s-soya2421/strapi-plugin-data-importer) that lets you import CSV and JSON through a wizard UI in the Strapi v5 admin panel.
+- Packed in the features I needed in practice: wizard UI, Dry run, Rollback, field validation, and Upsert mode.
+- Released v0.1.0 on 2026-03-03 and added JSON support and Upsert mode the next day in v0.2.0.
+
+## Why I Built It
+
+When managing content in Strapi, you frequently need to bulk-import initial or migrated data. The built-in Content Manager handles one record at a time, and hitting the REST API directly requires writing a script and setting up an execution environment.
+
+## Key Features
+
+### Step-Based Wizard UI
+
+A "Data Importer" entry is added to the admin sidebar. The flow completes in five steps.
+
+1. **Select content type** — fetched automatically from the Strapi schema. You can download a CSV template here.
+2. **Upload file** — pick a CSV or JSON file and upload it. A 5-row preview appears immediately.
+3. **Column mapping** — review and adjust how CSV headers map to Strapi fields. Required fields are marked with `*`.
+4. **Configure & run** — choose import mode, Dry run, Rollback, and batch size, then execute.
+5. **Review results** — see created / updated / failed counts. Failed rows show error details in a table and can be retried.
+
+### CSV Template Download
+
+Selecting a content type generates a CSV file with that type's field names as headers. If `config/data-importer-mappings.json` is present, the mapped column names are reflected in the template as well.
+
+```json
+{
+  "api::product.product": {
+    "Product Name": "name",
+    "Price": "price",
+    "Published At": "publishedAt"
+  }
+}
+```
+
+### Field Type Validation
+
+Because CSV files are read as strings, type checking before import is essential. The plugin validates integers, floats, booleans, email addresses, and enumerations individually. Rows that fail validation are skipped while the rest continue. Rows with empty required fields are also treated as errors.
+
+```
+title,price,active,email
+Hello,1200,true,hello@example.com   ← OK
+World,abc,yes,invalid-email         ← validation errors on price, active, and email
+```
+
+### Dry Run and Rollback
+
+- **Dry run** — runs validation and estimates the row count without writing anything to the database. Use it to verify before committing to production.
+- **Rollback** — if one or more rows fail during an import run, all records created in that run are automatically deleted. Note: updates from Upsert mode cannot be rolled back.
+
+### Import History
+
+Each run's results are saved to `config/data-importer-history.json` (up to 50 entries). The History section at the bottom of the admin panel shows the latest 10 runs with timestamps, content types, modes, and record counts.
+
+## Implementation Highlights
+
+### Server Side: Batch Processing and Rollback Management
+
+Sending large datasets in a single request causes API timeouts, so the client splits data into batches before sending. The `import` service on the server receives each batch and processes rows one by one using `strapi.documents(uid).create` or `strapi.documents(uid).update`.
+
+To support Rollback, the `documentId` of each created record is kept in an array per run. After all rows are processed, if any failures occurred, `strapi.documents(uid).delete` is called for each ID.
+
+```typescript
+const createdDocumentIds: string[] = [];
+
+for (const row of rows) {
+  try {
+    const created = await strapi.documents(uid).create({ data });
+    if (rollbackOnFailure) createdDocumentIds.push(created.documentId);
+    results.success++;
+  } catch (err) {
+    results.failed++;
+    // ...
+  }
+}
+
+// After all rows, roll back if there were failures
+if (rollbackOnFailure && results.failed > 0 && !dryRun) {
+  for (const documentId of createdDocumentIds) {
+    await strapi.documents(uid).delete({ documentId });
+  }
+}
+```
+
+### Frontend: CSV Parsing and Flattening
+
+CSV is parsed with a custom parser that treats every cell as a string. JSON can have nested objects and arrays, so each value is converted to a string before import.
+
+Relation fields are accepted as comma-separated `documentId` strings and converted to arrays on the server side. Media fields expect comma-separated numeric IDs.
+
+### Automatic Column Mapping
+
+CSV header names are compared against Strapi field names with an exact match, and matches are mapped automatically. If `data-importer-mappings.json` exists, it takes priority. Step 3 allows manual review and correction.
+
+## v0.1.0 → v0.2.0 Evolution
+
+v0.1.0 launched as a minimal CSV-only release. v0.2.0 was added the following day.
+
+| Addition | Description |
+|---|---|
+| JSON import | Accepts array-format JSON and auto-flattens nested structures |
+| Upsert mode | Looks up existing records by key field; updates if found, creates if not |
+| Import history | Stores up to 50 run results in JSON file with UI display |
+| Detailed result view | Separates created / updated / failed counts |
+
+## Installation and Usage
+
+```bash
+npm install strapi-plugin-data-importer
+```
+
+Enable the plugin in `config/plugins.ts`.
+
+```ts
+export default {
+  'data-importer': {
+    enabled: true,
+  },
+};
+```
+
+Open the admin panel and "Data Importer" will appear in the sidebar.
+
+## What Is Next
+
+- Finer-grained access control (restrict importable content types by role)
+- Improved data count display in the preview step
+- Better support for Strapi v5 relation components
+
+Feedback and PRs are welcome on [GitHub](https://github.com/s-soya2421/strapi-plugin-data-importer).
+
+## Summary
+
+- Built a Strapi v5 plugin that imports CSV and JSON through a 5-step wizard in the admin panel.
+- Implemented the features I needed in practice: Dry run, Rollback, field validation, Upsert mode, and import history.
+- Batch processing and rollback management sit on the server side; CSV parsing (custom-built) and JSON flattening sit on the frontend side — a clean separation.
+- Released v0.1.0 with CSV import and added JSON support, Upsert mode, and history management in v0.2.0 the next day.
