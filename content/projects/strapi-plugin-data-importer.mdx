@@ -1,0 +1,54 @@
+---
+title: 'strapi-plugin-data-importer'
+description: 'Strapi v5 の管理画面から CSV・JSON をウィザード形式で取り込める OSS プラグイン。Dry run・Rollback・Upsert など実務で必要な機能を一通り実装した。'
+date: '2026-03-03'
+tags: ['Strapi', 'TypeScript', 'OSS']
+cover: '/images/projects/strapi-plugin-cover.svg'
+role: '個人開発'
+tech: ['TypeScript', 'Strapi v5', 'React']
+links:
+  github: 'https://github.com/s-soya2421/strapi-plugin-data-importer'
+  npm: 'https://www.npmjs.com/package/strapi-plugin-data-importer'
+draft: false
+---
+
+## 作った背景
+
+Strapi でコンテンツを管理していると、初期データや移行データをまとめて投入したいケースが頻繁にある。公式の Content Manager は 1 件ずつしか入力できず、REST API を直接叩く方法はスクリプトの準備が必要で手間がかかる。「管理画面から手軽に取り込みたい」という自分の実務上の課題を解消するため、プラグインとして OSS 化した。
+
+## 主な機能
+
+### 5 ステップのウィザード UI
+
+管理画面のサイドバーに「Data Importer」が追加される。
+
+1. **コンテンツタイプの選択** — スキーマから自動取得。CSVテンプレートをダウンロードできる。
+2. **ファイルのアップロード** — CSV・JSON を選択。先頭 5 行のプレビューを表示。
+3. **カラムマッピング** — ヘッダーとフィールドの対応を確認・調整。
+4. **設定と実行** — Dry run・Rollback・バッチサイズなどを選んで実行。
+5. **結果確認** — 作成・更新・失敗件数を表示。失敗行はエラー詳細付きでリトライ可能。
+
+### Dry run・Rollback
+
+- **Dry run** — バリデーションと件数の試算だけ行い、DB には何も書かない。
+- **Rollback** — インポート中に失敗が出た場合、そのランで作成したレコードを自動削除する。
+
+### Upsert モード
+
+キーフィールドで既存レコードを検索し、あれば更新・なければ作成する。大量データの差分更新に使える。
+
+### インポート履歴
+
+各ランの結果を最大 50 件保存。管理画面から最新 10 件の日時・件数をすぐに確認できる。
+
+## リリースの経緯
+
+v0.1.0（2026-03-03）で CSV インポートの最小構成をリリースし、翌日 v0.2.0 で JSON 対応・Upsert モード・インポート履歴を追加した。
+
+## インストール
+
+```bash
+npm install strapi-plugin-data-importer
+```
+
+`config/plugins.ts` でプラグインを有効化するだけで、管理画面に「Data Importer」が表示される。

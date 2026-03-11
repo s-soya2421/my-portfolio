@@ -1,0 +1,114 @@
+---
+title: '502 Errors Came Back After a Nuxt Major Upgrade — The sed Patch That Stopped Working'
+description: 'After a Nuxt major version upgrade, ALB 502 errors returned. The cause was that the build output structure changed and the sed-based keepAliveTimeout patch in CI/CD silently stopped applying. Here is the fix and how to prevent it from happening again.'
+date: '2026-02-16'
+updated: '2026-02-16'
+tags: ['Nuxt', 'AWS', 'ALB', 'Troubleshooting']
+draft: false
+---
+
+## TL;DR
+
+- After a Nuxt major version upgrade, previously resolved ALB 502 errors came back.
+- The cause was a change in the `.output/` directory structure that made the `sed`-based `keepAliveTimeout` / `headersTimeout` patch in CI/CD stop applying silently.
+- Updating the `sed` path and pattern to match the new structure resolved the 502 errors again.
+- Going forward, I plan to add startup-time property validation to detect when the patch is missing.
+
+## Background
+
+In a previous post, I covered how Nuxt (Nitro) generates a Node.js server whose `keepAliveTimeout` defaults to 5 s — much shorter than the ALB idle timeout of 60 s. When ALB tries to reuse a connection, Node.js has already closed it, triggering 502 errors.
+
+The workaround I was running was a `sed` patch applied to the build output in CI/CD, inserting `keepAliveTimeout` / `headersTimeout` just before the `server.listen` call.
+
+```bash
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/chunks/nitro/nitro.mjs
+```
+
+## What Happened
+
+After the Nuxt major version upgrade and deploy, 5XX metrics on the ALB started rising. CloudWatch showed intermittent `502 Bad Gateway` errors.
+
+There were no application-level errors in the logs — only 502s visible in ALB metrics. The exact same pattern as before.
+
+## Root Cause
+
+Inspecting the build output revealed that the `.output/server/` directory structure had changed.
+
+Previous structure:
+
+```
+.output/server/
+├── chunks/
+│   └── nitro/
+│       └── nitro.mjs    ← sed target
+└── index.mjs
+```
+
+Structure after the upgrade:
+
+```
+.output/server/
+├── chunks/
+│   └── nitro/
+│       └── nitro.mjs    ← server.listen no longer here
+└── index.mjs            ← server.listen moved here
+```
+
+The `sed` pattern (`/server\.listen/`) no longer matched anything, and the `keepAliveTimeout` / `headersTimeout` injection was silently skipped. Because `sed` does not error when no lines match, CI/CD succeeded without any indication of the problem.
+
+## Fix
+
+First, I used `find` to locate where `server.listen` now lives.
+
+```bash
+find .output/server -name '*.mjs' | xargs grep -n 'server\.listen'
+```
+
+I updated the `sed` path to target the file where it was found, then added a verification step to CI to confirm the patch actually applied.
+
+```bash
+# Apply patch
+sed -i -e "/server\.listen/i server.keepAliveTimeout = 62 * 1000\nserver.headersTimeout = 65 * 1000" \
+  .output/server/index.mjs
+
+# Verify: fail the build if the patch was not applied
+if ! grep -q 'keepAliveTimeout' .output/server/index.mjs; then
+  echo '[ERROR] keepAliveTimeout patch was not applied!' >&2
+  exit 1
+fi
+
+echo '[patch] applied keepAliveTimeout tweak'
+```
+
+Now if the structure changes again and the patch stops applying, CI will fail instead of silently succeeding.
+
+## Next Step — Runtime Property Validation
+
+A `sed` patch on build output is fragile by nature; any structural change can break it quietly. I had flagged this risk in the previous post, and sure enough it bit me with this major upgrade.
+
+The plan is to move toward validating the `server` object's properties at startup time.
+
+```javascript
+// Concept: validate properties after server.listen
+const EXPECTED_KEEP_ALIVE = 62 * 1000;
+const EXPECTED_HEADERS_TIMEOUT = 65 * 1000;
+
+server.listen(port, () => {
+  if (server.keepAliveTimeout !== EXPECTED_KEEP_ALIVE) {
+    console.error(`[WARN] keepAliveTimeout is ${server.keepAliveTimeout}, expected ${EXPECTED_KEEP_ALIVE}`);
+  }
+  if (server.headersTimeout !== EXPECTED_HEADERS_TIMEOUT) {
+    console.error(`[WARN] headersTimeout is ${server.headersTimeout}, expected ${EXPECTED_HEADERS_TIMEOUT}`);
+  }
+});
+```
+
+With this, a missing patch surfaces immediately in logs. Paired with a monitoring alert, it becomes detectable right after a deploy.
+
+## Summary
+
+- A `sed` patch on build output is convenient but silently breaks when the output structure changes.
+- Adding a verification step to CI — fail if the patch was not applied — is a meaningful improvement for detection.
+- The more robust approach is runtime validation that confirms the values are set correctly at startup.
+- Until Nitro offers an official option to configure `keepAliveTimeout`, I will continue with this defensive approach.
