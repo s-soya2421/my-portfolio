@@ -18,7 +18,9 @@ describe('ChallengesSection', () => {
   it('renders the section heading from dictionary', () => {
     render(<ChallengesSection items={items} />);
 
-    expect(screen.getByRole('heading', { name: dictionary.sections.challengesTitle })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: dictionary.sections.challengesTitle })
+    ).toBeInTheDocument();
   });
 
   it('renders all challenge item titles and descriptions', () => {
