@@ -89,11 +89,11 @@ describe('ProjectCard', () => {
 
   it('renders impact metrics when provided', () => {
     render(
-      <ProjectCard project={{ ...project, impact_metrics: { users: '1000+', uptime: '99.9%' } }} />
+      <ProjectCard project={{ ...project, impact_metrics: { users: 1000, uptime: 99.9 } }} />
     );
 
-    expect(screen.getByText('1000+')).toBeInTheDocument();
-    expect(screen.getByText('99.9%')).toBeInTheDocument();
+    expect(screen.getByText('1000')).toBeInTheDocument();
+    expect(screen.getByText('99.9')).toBeInTheDocument();
   });
 
   it('links to locale-prefixed path for en locale', () => {
