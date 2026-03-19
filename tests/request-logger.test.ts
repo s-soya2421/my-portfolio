@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { withRequestLogging } from '@/lib/request-logger';
 import { REQUEST_ID_HEADER } from '@/lib/request-id';
+import { withRequestLogging } from '@/lib/request-logger';
 
 const { mockLogger } = vi.hoisted(() => {
   const mockLogger = {

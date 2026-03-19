@@ -23,9 +23,7 @@ describe('mdxComponents', () => {
     const H3 = mdxComponents.h3 as (props: Record<string, unknown>) => ReactElement;
     const Ul = mdxComponents.ul as (props: Record<string, unknown>) => ReactElement;
     const Ol = mdxComponents.ol as (props: Record<string, unknown>) => ReactElement;
-    const Blockquote = mdxComponents.blockquote as (
-      props: Record<string, unknown>
-    ) => ReactElement;
+    const Blockquote = mdxComponents.blockquote as (props: Record<string, unknown>) => ReactElement;
 
     render(
       <>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type RequestContext, getRequestContext } from '@/lib/request-context';
+import { getRequestContext, type RequestContext } from '@/lib/request-context';
 
 const createMockRequest = (
   headers: Record<string, string> = {},
