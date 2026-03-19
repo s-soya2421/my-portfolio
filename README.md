@@ -33,7 +33,7 @@ npm run dev
 | ---------------- | ----------------------------------------------------------- |
 | `npm run dev`    | 開発サーバーを起動                                          |
 | `npm run build`  | Next.js ビルド                                              |
-| `npm run export` | ビルド + 静的書き出し (`out/`)                              |
+| `npm run export` | 本番相当ビルド（`preexport` で OG 画像生成を含む）          |
 | `npm run start`  | `out/` をローカル配信 (`serve`)                             |
 | `npm run lint`   | Biome で lint                                               |
 | `npm run format` | Biome で整形                                                |
@@ -51,11 +51,21 @@ npm run dev
 ## 品質確認
 
 - `npm run lint` と `npm run test` を PR 前に必ず実行してください。
-- `npm run export` でビルドが通ることを確認し、`out/` をデプロイ対象にします。
+- `npm run export` でビルドが通ることを確認してください（Vercel は Git Integration で自動デプロイ）。
+- 静的ホスティングへ手動配置する場合は `out/` をデプロイ対象にします。
 - Lighthouse デスクトップ計測の推奨手順:
   1. `npm run export`
   2. `npm run start`
   3. Chrome DevTools > Lighthouse (Performance / Accessibility / Best Practices / SEO) を実行し 95+ を目指す。
+
+## CI/CD
+
+- CI: `.github/workflows/ci.yml`
+  - `format`, `lint`, `type-check`, `test:coverage`, `export` を実行。
+- CD: Vercel の Git Integration を利用（GitHub Actions 側の追加設定は不要）
+  - PR: Preview Deployment
+  - `main`: Production Deployment
+  - デプロイ設定は Vercel プロジェクト側で管理
 
 ## パフォーマンス指標
 
