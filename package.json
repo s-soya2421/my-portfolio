@@ -10,10 +10,10 @@
     "format": "biome format --write .",
     "format:check": "biome check . --formatter-enabled=true --linter-enabled=false",
     "test": "vitest",
-    "test:coverage": "vitest --coverage",
+    "test:coverage": "vitest --coverage --coverage.all=true",
     "test:watch": "vitest --watch",
     "type-check": "tsc --noEmit",
-    "export": "next build && next export",
+    "export": "next build",
     "preexport": "npm run og",
     "og": "tsx scripts/generate-og.ts"
   },
