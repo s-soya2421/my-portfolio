@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REQUEST_ID_HEADER, generateRequestId, getRequestIdFromHeaders } from '@/lib/request-id';
+import { generateRequestId, getRequestIdFromHeaders, REQUEST_ID_HEADER } from '@/lib/request-id';
 
 describe('REQUEST_ID_HEADER', () => {
   it('equals x-request-id', () => {
