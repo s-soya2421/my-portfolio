@@ -41,11 +41,13 @@ vi.mock('next/image', () => ({
     alt,
     fill: _fill,
     sizes: _sizes,
+    priority: _priority,
     ...props
   }: {
     src: string;
     alt: string;
     fill?: boolean;
     sizes?: string;
+    priority?: boolean;
   }) => React.createElement('img', { src, alt, ...props }),
 }));
