@@ -4,7 +4,9 @@ import { SectionHeader } from './section-header';
 
 describe('SectionHeader', () => {
   it('renders eyebrow, title, and description', () => {
-    render(<SectionHeader eyebrow="Projects" title="My Projects" description="A list of projects" />);
+    render(
+      <SectionHeader eyebrow="Projects" title="My Projects" description="A list of projects" />
+    );
 
     expect(screen.getByText('Projects')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'My Projects' })).toBeInTheDocument();
