@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import matter from 'gray-matter';
-import { compileMDX } from 'next-mdx-remote/rsc';
 import path from 'path';
 import type { ReactElement } from 'react';
 import { cache } from 'react';
@@ -53,6 +52,16 @@ type CompileResult<T extends BaseFrontmatter> = {
   content: ReactElement;
   slug: string;
   jsonLd?: Record<string, unknown>;
+};
+
+let compileMdxModulePromise: Promise<typeof import('next-mdx-remote/rsc')> | null = null;
+
+const getCompileMdx = async () => {
+  if (!compileMdxModulePromise) {
+    compileMdxModulePromise = import('next-mdx-remote/rsc');
+  }
+  const { compileMDX } = await compileMdxModulePromise;
+  return compileMDX;
 };
 
 const getDir = (collection: ContentCollection, locale: ContentLocale) => {
@@ -133,6 +142,7 @@ const compileContentInternal = async <T extends BaseFrontmatter>(
   const filePath = path.join(getDir(collection, locale), `${slug}.mdx`);
   try {
     const source = await fs.readFile(filePath, 'utf8');
+    const compileMDX = await getCompileMdx();
 
     const { content, frontmatter } = await compileMDX<T>({
       source,
