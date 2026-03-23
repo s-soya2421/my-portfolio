@@ -47,7 +47,16 @@ updates:
       prefix: 'chore(ci)'
       include: 'scope'
     groups:
-      github-actions:
+      github-actions-major:
         applies-to: 'version-updates'
         patterns:
           - '*'
+        update-types:
+          - 'major'
+      github-actions-minor-patch:
+        applies-to: 'version-updates'
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
