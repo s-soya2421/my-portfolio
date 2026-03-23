@@ -1,8 +1,8 @@
 # Soya — Full-Stack-ish Engineer
 
 [![CI](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/s-soya2421/my-portfolio/actions/workflows/ci.yml)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4.5-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2.1-black.svg)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 静的エクスポート可能な Next.js (App Router) ベースのポートフォリオサイトです。Tailwind CSS + shadcn/ui + lucide-react を採用し、MDXでコンテンツを管理します。SSG 前提で構成しているため、Vercel や静的ホスティングへのデプロイが容易です。
