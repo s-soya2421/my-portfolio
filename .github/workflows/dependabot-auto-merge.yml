@@ -1,0 +1,34 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot-auto-merge:
+    name: Dependabot Auto Merge (Patch/Minor)
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for patch and minor updates
+        if: |
+          (
+            (contains(steps.metadata.outputs.update-type, 'semver-patch') || contains(steps.metadata.outputs.update-type, 'semver-minor')) &&
+            !contains(steps.metadata.outputs.update-type, 'semver-major')
+          ) ||
+          contains(github.event.pull_request.head.ref, '/npm-minor-patch') ||
+          contains(github.event.pull_request.head.ref, '/github-actions-minor-patch')
+        run: gh pr merge --auto --squash "${PR_URL}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
