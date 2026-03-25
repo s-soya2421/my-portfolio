@@ -17,7 +17,12 @@ import type { ProjectFrontmatter } from '@/lib/content';
 import { buildLocalePath } from '@/lib/locale';
 import { cn } from '@/lib/utils';
 
-export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug: string } }) => {
+type ProjectCardProps = {
+  project: ProjectFrontmatter & { slug: string };
+  imageLoading?: 'lazy' | 'eager';
+};
+
+export const ProjectCard = ({ project, imageLoading = 'lazy' }: ProjectCardProps) => {
   const { locale } = useI18n();
   const metrics = project.impact_metrics ? Object.entries(project.impact_metrics) : [];
   const projectPath = buildLocalePath(`/projects/${project.slug}`, locale);
@@ -34,7 +39,7 @@ export const ProjectCard = ({ project }: { project: ProjectFrontmatter & { slug:
             fill
             className="object-cover transition duration-500 group-hover:scale-105"
             sizes="(min-width: 768px) 50vw, 100vw"
-            priority={false}
+            loading={imageLoading}
           />
         </div>
       ) : null}
