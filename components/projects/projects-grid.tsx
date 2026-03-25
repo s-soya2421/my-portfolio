@@ -43,8 +43,12 @@ export const ProjectsGrid = ({
         ))}
       </div>
       <div className="grid gap-6 md:grid-cols-2">
-        {filtered.map((project) => (
-          <ProjectCard key={project.slug} project={project} />
+        {filtered.map((project, index) => (
+          <ProjectCard
+            key={project.slug}
+            project={project}
+            imageLoading={index < 2 ? 'eager' : 'lazy'}
+          />
         ))}
       </div>
       {!filtered.length ? (

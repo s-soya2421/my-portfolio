@@ -37,7 +37,7 @@ export const ProjectsPreview = ({
               key={project.slug}
               className={cn('reveal-rise', delayClasses[index] ?? 'reveal-delay-4')}
             >
-              <ProjectCard project={project} />
+              <ProjectCard project={project} imageLoading={index < 2 ? 'eager' : 'lazy'} />
             </div>
           ))}
         </div>
