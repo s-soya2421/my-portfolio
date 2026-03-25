@@ -93,7 +93,7 @@ export default async function EnglishProjectDetailPage({ params }: ProjectPagePr
               width={1280}
               height={720}
               className="w-full object-cover"
-              priority={false}
+              loading="eager"
             />
           </div>
         ) : null}

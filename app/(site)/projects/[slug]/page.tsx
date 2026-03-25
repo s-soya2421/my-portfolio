@@ -90,7 +90,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               width={1280}
               height={720}
               className="w-full object-cover"
-              priority={false}
+              loading="eager"
             />
           </div>
         ) : null}
