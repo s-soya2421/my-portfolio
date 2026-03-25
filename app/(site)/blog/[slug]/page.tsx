@@ -2,11 +2,13 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Script from 'next/script';
+import { ShareButton } from '@/components/shared/share-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { type BlogFrontmatter, getBlogPostBySlug, loadCollection } from '@/lib/content';
 import { logger } from '@/lib/logger';
 import { buildBreadcrumbJsonLd, buildMetadata, webPageJsonLd } from '@/lib/seo';
+import { siteConfig } from '@/lib/site';
 import { formatDate } from '@/lib/utils';
 
 type BlogPageProps = {
@@ -86,6 +88,7 @@ export default async function BlogDetailPage({ params }: BlogPageProps) {
               </Badge>
             ))}
           </div>
+          <ShareButton title={frontmatter.title} url={`${siteConfig.url}/blog/${slug}`} />
         </header>
         <div className="prose max-w-none dark:prose-invert">{content}</div>
         <Script id="blog-detail-webpage-json" type="application/ld+json">
