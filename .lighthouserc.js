@@ -1,13 +1,13 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: 'npx serve -s out -l 8080',
+      startServerCommand: 'npx serve -s out',
       startServerReadyPattern: 'Accepting connections',
       url: [
-        'http://localhost:8080/',
-        'http://localhost:8080/about',
-        'http://localhost:8080/projects',
-        'http://localhost:8080/blog',
+        'http://localhost:3000/',
+        'http://localhost:3000/about',
+        'http://localhost:3000/projects',
+        'http://localhost:3000/blog',
       ],
     },
     assert: {
