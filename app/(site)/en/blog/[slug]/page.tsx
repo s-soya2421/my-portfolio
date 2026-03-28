@@ -91,7 +91,11 @@ export default async function EnglishBlogDetailPage({ params }: BlogPageProps) {
               </Badge>
             ))}
           </div>
-          <ShareButton title={frontmatter.title} url={`${siteConfig.url}/en/blog/${slug}`} locale="en" />
+          <ShareButton
+            title={frontmatter.title}
+            url={`${siteConfig.url}/en/blog/${slug}`}
+            locale="en"
+          />
         </header>
         <div className="prose max-w-none dark:prose-invert">{content}</div>
         <Script id="blog-detail-webpage-json" type="application/ld+json">
