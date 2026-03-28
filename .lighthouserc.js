@@ -4,9 +4,9 @@ module.exports = {
       staticDistDir: './out',
       url: [
         'http://localhost/',
-        'http://localhost/about',
-        'http://localhost/projects',
-        'http://localhost/blog',
+        'http://localhost/about/',
+        'http://localhost/projects/',
+        'http://localhost/blog/',
       ],
     },
     assert: {
