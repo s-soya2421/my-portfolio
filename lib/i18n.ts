@@ -44,6 +44,8 @@ type SectionCopy = {
   blog: {
     empty: string;
     readMore: string;
+    showAllTags: string;
+    showLessTags: string;
   };
 };
 
@@ -95,6 +97,8 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     blog: {
       empty: 'まだ記事はありません。',
       readMore: '続きを読む',
+      showAllTags: 'すべて表示',
+      showLessTags: '折りたたむ',
     },
   },
   en: {
@@ -142,6 +146,8 @@ const dictionaries: Record<SiteLocale, Dictionary> = {
     blog: {
       empty: 'No posts yet.',
       readMore: 'Read more',
+      showAllTags: 'Show all',
+      showLessTags: 'Show less',
     },
   },
 };
