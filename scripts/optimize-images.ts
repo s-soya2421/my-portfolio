@@ -44,9 +44,7 @@ const optimizeImage = async (filePath: string): Promise<OptimizeResult> => {
       .png({ quality: 85, compressionLevel: 9 })
       .toBuffer();
   } else {
-    compressedBuffer = await sharp(originalBuffer)
-      .jpeg({ quality: 85, mozjpeg: true })
-      .toBuffer();
+    compressedBuffer = await sharp(originalBuffer).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
   }
 
   // Only overwrite if compression actually reduced size
@@ -58,9 +56,7 @@ const optimizeImage = async (filePath: string): Promise<OptimizeResult> => {
 
   // Generate WebP version alongside the original
   const webpPath = filePath.replace(/\.(png|jpe?g)$/i, '.webp');
-  const webpBuffer = await sharp(originalBuffer)
-    .webp({ quality: 80 })
-    .toBuffer();
+  const webpBuffer = await sharp(originalBuffer).webp({ quality: 80 }).toBuffer();
   await fs.writeFile(webpPath, webpBuffer);
 
   return {
