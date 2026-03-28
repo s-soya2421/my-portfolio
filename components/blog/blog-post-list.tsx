@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { PostCard } from '@/components/cards/post-card';
 import { Pagination } from '@/components/shared/pagination';
 import type { BlogFrontmatter } from '@/lib/content';
@@ -18,6 +18,11 @@ type PaginationLabels = {
   pageLabel: string;
 };
 
+type TagLabels = {
+  showAll: string;
+  showLess: string;
+};
+
 type Props = {
   allPosts: BlogListItem[];
   currentPage: number;
@@ -25,6 +30,7 @@ type Props = {
   basePath: string;
   emptyMessage?: string;
   paginationLabels?: PaginationLabels;
+  tagLabels?: TagLabels;
 };
 
 export const BlogPostList = ({
@@ -34,18 +40,27 @@ export const BlogPostList = ({
   basePath,
   emptyMessage = '記事を執筆中です。',
   paginationLabels,
+  tagLabels = { showAll: 'すべて表示', showLess: '折りたたむ' },
 }: Props) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const selectedTag = searchParams.get('tag');
+  const [showAllTags, setShowAllTags] = useState(false);
 
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
+  const { allTags, popularTags } = useMemo(() => {
+    const tagCounts = new Map<string, number>();
     for (const post of allPosts) {
-      post.tags?.forEach((tag) => tagSet.add(tag));
+      post.tags?.forEach((tag) => {
+        tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+      });
     }
-    return Array.from(tagSet).sort();
+    const all = Array.from(tagCounts.keys()).sort();
+    const popular = all.filter((tag) => (tagCounts.get(tag) ?? 0) >= 2);
+    return { allTags: all, popularTags: popular };
   }, [allPosts]);
+
+  const visibleTags = showAllTags ? allTags : popularTags;
+  const hasHiddenTags = popularTags.length < allTags.length;
 
   const filteredPosts = useMemo(() => {
     if (!selectedTag) return allPosts;
@@ -71,8 +86,8 @@ export const BlogPostList = ({
   return (
     <div className="space-y-8">
       {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {allTags.map((tag) => (
+        <div className="flex flex-wrap items-center gap-2">
+          {visibleTags.map((tag) => (
             <button
               key={tag}
               type="button"
@@ -87,6 +102,15 @@ export const BlogPostList = ({
               {tag}
             </button>
           ))}
+          {hasHiddenTags && (
+            <button
+              type="button"
+              onClick={() => setShowAllTags((prev) => !prev)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showAllTags ? tagLabels.showLess : tagLabels.showAll}
+            </button>
+          )}
         </div>
       )}
 
