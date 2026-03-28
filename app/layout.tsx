@@ -28,11 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang={siteConfig.defaultLocale}
-      suppressHydrationWarning
-      data-scroll-behavior="smooth"
-    >
+    <html lang={siteConfig.defaultLocale} suppressHydrationWarning data-scroll-behavior="smooth">
       <body
         className={`${sans.variable} ${mono.variable} min-h-screen bg-background font-sans text-foreground`}
       >

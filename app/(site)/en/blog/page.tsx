@@ -81,6 +81,7 @@ export default async function EnglishBlogPage() {
             basePath={BLOG_SLUG}
             emptyMessage="Posts are in progress."
             paginationLabels={paginationLabels}
+            tagLabels={{ showAll: 'Show all', showLess: 'Show less' }}
           />
         </Suspense>
       </section>
