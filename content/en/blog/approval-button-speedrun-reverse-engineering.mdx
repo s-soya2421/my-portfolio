@@ -1,0 +1,67 @@
+---
+title: 'I Won the Approve-Button Speedrun — Then Had to Reverse-Engineer My Own Codebase'
+description: 'When you rubber-stamp every AI-agent suggestion without reading it, design intent becomes a black box. Here are the reverse-engineering prompts I use to reclaim the "Why" behind generated code.'
+date: '2026-03-25'
+updated: '2026-03-25'
+tags: ['AI Agent', 'ReverseEngineering', 'Prompt']
+draft: false
+---
+
+## TL;DR
+
+- The real risk in AI-agent development isn't the generated code itself — it's an approval flow where you stop reading.
+- To reclaim the `Why`, not just the `What`, I use a fixed set of prompts that reverse-engineer design intent.
+- Reading alone isn't enough. Small, deliberate break-it-and-observe experiments are the fastest path to genuine understanding.
+
+## Introduction
+
+Developing with an AI agent is fast.
+But if you keep approving suggestions on autopilot, you're the one who pays later.
+
+"It works, but I can't explain why it's designed this way."
+
+Once you're in that state, every addition and every refactor feels risky.
+The real blocker isn't reading the code — it's the absence of design intent.
+
+## You Lose the `Why`, Not the `What`
+
+You can always trace _what_ the code does.
+What you actually need for future decisions is harder to recover:
+
+- Why was this architecture chosen?
+- Why were the alternatives discarded?
+- Where are the likely debt hotspots?
+
+Without those answers, each new feature becomes another "it happens to work" change stacked on top of the last.
+
+## Fixed Prompts for Reclaiming Understanding
+
+To fix this, I prompt the AI to act as an experienced tech lead and true design owner, dissecting the codebase every time.
+Four key moves:
+
+1. Dig into `README.md` / `AGENTS.md` / `docs/` first to surface specs and constraints.
+2. Produce a one-minute architectural overview.
+3. State the `Why` behind each implementation choice and name the alternatives that were rejected.
+4. Propose a menu of break-it-and-observe experiments.
+
+The goal isn't a code walkthrough — it's getting back to a state where _I_ can make the next decision.
+
+## Why Bother With Experiments?
+
+Reading creates the illusion of understanding.
+To make it stick, you need to break things on purpose and observe what happens.
+
+For example, I run small experiments like these:
+
+- Remove one validation rule and see where the safety net actually catches it.
+- Change a dependency's config value and surface unexpected side effects.
+- Shallow-out an error handler by one level and observe the blast radius during failure.
+
+The hands-on feel you get from experiments directly sharpens your mental model of the design.
+
+## Wrap-Up
+
+The danger zone in AI-agent development isn't how fast you implement — it's how fast you approve.
+So whenever I realize I've been rubber-stamping, I stop and run a reverse-engineering pass.
+
+To turn "code that runs" back into "code I can explain."
