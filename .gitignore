@@ -6,3 +6,5 @@ out
 .env.local
 coverage
 pnpm-lock.yaml
+.claude
+.codex
