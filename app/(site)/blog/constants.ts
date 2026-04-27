@@ -10,4 +10,4 @@ export const BLOG_SECTION_COPY = {
   description: '設計プロセスやツール導入の知見をライトに綴っています。ときおりポエム的なな文章も😎',
 } as const;
 
-export const BLOG_POSTS_PER_PAGE = 6;
+export { BLOG_POSTS_PER_PAGE } from '@/lib/blog';
