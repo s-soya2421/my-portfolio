@@ -10,4 +10,4 @@ export const BLOG_SECTION_COPY = {
   description: 'Lightweight notes on design processes, tools, and occasional poetry.',
 } as const;
 
-export const BLOG_POSTS_PER_PAGE = 6;
+export { BLOG_POSTS_PER_PAGE } from '@/lib/blog';
